@@ -3,7 +3,7 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   // Cambiar por la dirección final cuando se publique en Vercel.
-  site: 'https://argentina-todo-el-ano.vercel.app',
+  site: 'https://argentina-todo-el-anio.vercel.app',
   // Que ningún script quede en línea: la política de seguridad solo permite archivos propios.
   vite: { build: { assetsInlineLimit: 0 } },
   // Sin la barra de herramientas de Astro en modo desarrollo.

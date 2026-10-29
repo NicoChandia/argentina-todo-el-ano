@@ -27,7 +27,7 @@ const SMN_CANALES = [
 const GDACS = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH';
 const INA = 'https://alerta.ina.gob.ar/pub/datos/datos';
 const OAVV = 'https://oavv.segemar.gob.ar';
-const UA = 'ArgentinaTodoElAno/0.1 (+https://argentina-todo-el-ano.vercel.app)';
+const UA = 'ArgentinaTodoElAno/0.1 (+https://argentina-todo-el-anio.vercel.app)';
 
 export interface Aviso {
   fuente: 'SMN' | 'GDACS' | 'INA' | 'OAVV';

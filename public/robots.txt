@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://argentina-todo-el-ano.vercel.app/sitemap.xml
+Sitemap: https://argentina-todo-el-anio.vercel.app/sitemap.xml
