@@ -1,0 +1,762 @@
+---
+// Mapa de la Argentina con todas las localidades que mide INDEC y algunas atracciones sin medición.
+// El SVG se dibuja al compilar (d3-geo); en el navegador solo cambia el color de los puntos
+// según el mes elegido y se completa el panel de detalle.
+import { geoAzimuthalEqualArea, geoPath, geoTransverseMercator } from 'd3-geo';
+import antartidaRaw from '../data/antartida.geojson?raw';
+import provincias from '../data/provincias.geojson?raw';
+import lugares from '../data/lugares.json';
+import datos from '../data/temporada.json';
+import { estaciones as nombresEstacion, mesesCortos, mesesLargos, t as textos, url, type Lang } from '../i18n';
+import { destinos } from '../data/destinos';
+import fotosEstacion from '../data/fotos-estacion.json';
+import { foto } from '../lib/fotos';
+import infoProv from '../data/provincias-info.json';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const x = textos(lang).mapa;
+const niveles = textos(lang).niveles;
+const MESES = mesesCortos(lang);
+const MESES_LARGOS = mesesLargos(lang);
+
+const geo = JSON.parse(provincias);
+const ANCHO = 460;
+const ALTO = 980;
+const proy = geoTransverseMercator().rotate([65, 0]).fitExtent([[12, 12], [ANCHO - 12, ALTO - 12]], geo);
+const ruta = geoPath(proy);
+
+// Recuadro de la Antártida Argentina y las Islas del Atlántico Sur (Ley 22.963, art. 19),
+// en proyección polar, en el océano al este de la Patagonia.
+const antartida = JSON.parse(antartidaRaw);
+const sector = { type: 'LineString', coordinates: [[-74, -60], [-74, -90], [-25, -90], [-25, -60]] };
+const arco = { type: 'LineString', coordinates: Array.from({ length: 50 }, (_, i) => [-74 + i, -60]) };
+const caja = { x0: 318, y0: 742, x1: 452, y1: 962 };
+const proyAnt = geoAzimuthalEqualArea()
+  .rotate([50, 90])
+  .fitExtent([[caja.x0 + 8, caja.y0 + 24], [caja.x1 - 8, caja.y1 - 8]], {
+    type: 'FeatureCollection',
+    features: [...antartida.features, { type: 'Feature', geometry: sector, properties: {} }],
+  });
+const rutaAnt = geoPath(proyAnt);
+const partesAnt = antartida.features.map((f: any) => ({ nombre: f.properties.nombre, d: rutaAnt(f) ?? '' }));
+const lineasAnt = [rutaAnt(sector as any) ?? '', rutaAnt(arco as any) ?? ''];
+
+const cortos: Record<string, string> = {
+  'Ciudad Autónoma de Buenos Aires': 'Ciudad de Buenos Aires',
+  'Tierra del Fuego, Antártida e Islas del Atlántico Sur': 'Tierra del Fuego',
+};
+// Islas Malvinas: un trazo propio para que no se pierdan por su tamaño, y su nombre.
+const tdfGeo = geo.features.find((f: any) => String(f.properties.nombre).startsWith('Tierra del Fuego'));
+const malvinas = tdfGeo
+  ? {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: (tdfGeo.geometry.coordinates as number[][][][]).filter((p) =>
+          p[0].every(([lon, lat]) => lon > -62 && lon < -57 && lat > -53 && lat < -50.8),
+        ),
+      },
+    }
+  : null;
+const rutaMalvinas = malvinas ? ruta(malvinas as any) ?? '' : '';
+// El nombre va debajo de las islas, con espacio, calculado sobre su contorno real.
+const [[mx0], [mx1, my1]] = malvinas ? ruta.bounds(malvinas as any) : [[0, 0], [0, 0]];
+const etiquetaMalvinas = { x: (mx0 + mx1) / 2, y: my1 + 12 };
+const provs = geo.features.map((f: any) => ({
+  nombre: cortos[f.properties.nombre] ?? f.properties.nombre,
+  d: ruta(f) ?? '',
+}));
+
+type Serie = { viajeros: Record<string, (number | null)[]>; inciertos: Record<string, number[]> };
+const series = (datos as unknown as { localidades: Record<string, Serie> }).localidades;
+
+// Las atracciones marcadas "soloProvincia" aparecen solo en la página de su provincia,
+// para que el mapa del país no se cargue de puntos.
+const lugaresPais = lugares.filter((l: any) => !l.soloProvincia);
+const puntos = lugaresPais.map((l, id) => {
+  const [x, y] = proy([l.lon, l.lat]) ?? [0, 0];
+  let meses: (number | null)[] | null = null;
+  if (l.localidadEOH && series[l.localidadEOH]) {
+    const s = series[l.localidadEOH].viajeros;
+    const anios = Object.keys(s);
+    meses = MESES.map((_, i) => {
+      const vs = anios.map((a) => s[a][i]).filter((v): v is number => typeof v === 'number');
+      return vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : null;
+    });
+  }
+  const validos = (meses ?? []).filter((v): v is number => v !== null);
+  const max = validos.length ? Math.max(...validos) : 0;
+  const total = validos.reduce((a, b) => a + b, 0);
+  return { ...l, id, x: +x.toFixed(1), y: +y.toFixed(1), meses, max, total };
+});
+const mayor = Math.max(...puntos.map((p) => p.total));
+const radio = (p: (typeof puntos)[number]) => (p.meses ? 3.2 + 9 * Math.sqrt(p.total / mayor) : 4.2);
+// Los puntos grandes primero, para que los chicos queden arriba y se puedan tocar.
+const ordenados = [...puntos].sort((a, b) => radio(b) - radio(a));
+
+const MES_INICIAL = 0;
+const rel = (p: (typeof puntos)[number], i: number) => (p.meses && p.meses[i] !== null && p.max ? p.meses[i]! / p.max : null);
+
+const destinosUsados = [...new Set(lugaresPais.map((l) => l.destino).filter((d): d is string => !!d))];
+// Foto de cada destino por estación (o su foto principal), para el panel del mapa.
+const fotosPorEstacion = fotosEstacion as unknown as Record<string, Record<string, string>>;
+const fotosPanel = Object.fromEntries(
+  destinosUsados.map((id) => {
+    const d = destinos.find((x) => x.id === id);
+    const principal = d && d.fotos[0] ? foto(d.fotos[0], 640) : null;
+    const porEst = fotosPorEstacion[id] ?? {};
+    const f = (archivo?: string) => {
+      if (!archivo) return principal ? { src: principal.src, srcset: principal.srcset } : null;
+      const x = foto(archivo, 640);
+      return { src: x.src, srcset: x.srcset };
+    };
+    return [id, { verano: f(porEst.verano), otono: f(porEst.otono), invierno: f(porEst.invierno), primavera: f(porEst.primavera) }];
+  }),
+);
+const cliente = {
+  rutas: Object.fromEntries(destinosUsados.map((d) => [d, url(lang, `${d}/`)])),
+  provincias: Object.fromEntries(infoProv.map((p) => [p.nombre, url(lang, `provincia/${p.slug}/`)])),
+  fotos: fotosPanel,
+  estaciones: Object.fromEntries(Object.entries(nombresEstacion[lang]).map(([k, v]) => [k, v.nombre])),
+  locale: lang === 'es' ? 'es-AR' : lang === 'pt' ? 'pt-BR' : 'en-US',
+  meses: MESES_LARGOS,
+  tx: {
+    niveles,
+    atraccion: x.atraccion,
+    volver: x.volver,
+    cerrar: x.cerrar,
+    provincia: x.provincia,
+    sinLugares: x.sinLugares,
+    zona: x.zona,
+    sinMedicionCorto: x.sinMedicionCorto,
+    listaAlta: x.listaAlta,
+    listaTranquilos: x.listaTranquilos,
+    ninguno: x.ninguno,
+    sinDatosMes: x.sinDatosMes('{mes}'),
+    ver: x.ver('{n}'),
+    estado: x.estado('{nivel}', '{v}', 999).replace('999', '{pct}'),
+    recorrer: x.recorrer,
+    verProvincia: textos(lang).provincia.verProvincia('{n}'),
+    pausar: x.pausar,
+  },
+  provincias: provs.map((p) => p.nombre),
+  puntos: puntos.map(({ id, nombre, provincia, tipo, destino, meses, max, localidadEOH }) => ({
+    id, nombre, provincia, tipo, destino, meses, max, localidadEOH,
+  })),
+};
+---
+<div class="mapa" data-mapa>
+  <div class="columna">
+  <div class="controles">
+    <p class="etiqueta" id="titulo-meses">{x.elegi}</p>
+    <div class="meses" role="radiogroup" aria-labelledby="titulo-meses">
+      {MESES.map((m, i) => (
+        <button type="button" role="radio" aria-checked={i === MES_INICIAL ? 'true' : 'false'} data-mes={i} id={`mes-${i}`}>
+          {m}
+        </button>
+      ))}
+    </div>
+    <button type="button" class="recorrer" data-recorrer aria-pressed="false">
+      <span class="icono" aria-hidden="true">▶</span> <span data-recorrer-texto>{x.recorrer}</span>
+    </button>
+  </div>
+
+  <aside class="panel" aria-live="polite" data-panel>
+    <div data-resumen>
+      <p class="etiqueta">{x.en} <span data-mes-nombre>{MESES_LARGOS[MES_INICIAL]}</span></p>
+      <h3>{x.tocar}</h3>
+      <p class="ayuda">{x.ayuda}</p>
+      <div class="listas" data-listas></div>
+    </div>
+    <div data-detalle hidden></div>
+  </aside>
+
+  <section class="como-leer" aria-labelledby="titulo-leer" data-leer data-tx-hay={JSON.stringify([x.leer.hayAvisos(1), x.leer.hayAvisos(2)])} data-tx-sin={x.leer.sinAvisos}>
+    <h3 id="titulo-leer" class="etiqueta">{x.leer.titulo}</h3>
+    <p class="sub">{x.leer.puntos}</p>
+    <ul class="claves">
+      <li><i class="a" aria-hidden="true"></i>{x.leyenda.alta}</li>
+      <li><i class="m" aria-hidden="true"></i>{x.leyenda.media}</li>
+      <li><i class="b" aria-hidden="true"></i>{x.leyenda.baja}</li>
+      <li><i class="n" aria-hidden="true"></i>{x.leyenda.sin}</li>
+      <li class="atr"><i aria-hidden="true"></i>{x.leyenda.atr}</li>
+    </ul>
+    <p class="nota">{x.explica}</p>
+    <p class="sub">{x.leer.bordes}</p>
+    <ul class="claves bordes">
+      <li><i class="b1" aria-hidden="true"></i>{x.leer.amarillo}</li>
+      <li><i class="b2" aria-hidden="true"></i>{x.leer.naranja}</li>
+      <li><i class="b3" aria-hidden="true"></i>{x.leer.rojo}</li>
+    </ul>
+    <p class="nota">{x.leer.bordesTexto} <strong data-leer-estado></strong></p>
+  </section>
+  </div>
+
+  <div class="lienzo">
+    <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} role="group" aria-label={x.aria}>
+      <g class="provincias">
+        {provs.map((p) => (
+          <path d={p.d} data-provincia={p.nombre} tabindex="-1"><title>{p.nombre}</title></path>
+        ))}
+      </g>
+      {rutaMalvinas && (
+        <g class="malvinas">
+          <path
+            d={rutaMalvinas}
+            data-provincia="Tierra del Fuego"
+            style="fill: var(--papel-2); stroke: var(--tinta-2); stroke-width: 0.7"
+          />
+          <text
+            x={etiquetaMalvinas.x.toFixed(1)}
+            y={etiquetaMalvinas.y.toFixed(1)}
+            text-anchor="middle"
+            style="font-family: var(--f-dato); font-size: 8.5px; letter-spacing: 0.04em; fill: var(--tinta-2); text-transform: uppercase"
+          >{x.malvinas}</text>
+        </g>
+      )}
+      <g class="puntos">
+        {ordenados.map((p) => {
+          const r = radio(p);
+          const v = rel(p, MES_INICIAL);
+          if (!p.meses) {
+            const s = 5.5;
+            return (
+              <a href="#" class="punto atraccion" data-punto={p.id} aria-label={x.ariaAtraccion(p.nombre, p.provincia)}>
+                <circle class="toque" cx={p.x} cy={p.y} r="15" />
+                <path class="marca" d={`M${p.x} ${p.y - s}L${p.x + s} ${p.y}L${p.x} ${p.y + s}L${p.x - s} ${p.y}Z`} />
+              </a>
+            );
+          }
+          return (
+            <a
+              href="#"
+              class={`punto ${v === null ? 'nulo' : v >= 0.8 ? 'alta' : v <= 0.55 ? 'baja' : 'media'} ${p.destino ? 'destacado' : ''}`}
+              data-punto={p.id}
+              aria-label={p.nombre}
+            >
+              <circle class="toque" cx={p.x} cy={p.y} r={Math.max(15, r + 4).toFixed(1)} />
+              <circle class="marca" cx={p.x} cy={p.y} r={r.toFixed(1)} />
+            </a>
+          );
+        })}
+      </g>
+      <g class="antartida" aria-label={x.antartida}>
+        <rect x={caja.x0} y={caja.y0} width={caja.x1 - caja.x0} height={caja.y1 - caja.y0} rx="4" />
+        <text x={caja.x0 + 8} y={caja.y0 + 15}>{x.antartida}</text>
+        {lineasAnt.map((d) => <path class="sector" d={d} />)}
+        {partesAnt.map((p) => <path class="tierra" d={p.d}><title>{p.nombre}</title></path>)}
+      </g>
+    </svg>
+
+  </div>
+
+</div>
+
+<script type="application/json" id="datos-mapa" set:html={JSON.stringify(cliente)} />
+
+<script>
+  type Punto = {
+    id: number;
+    nombre: string;
+    provincia: string;
+    tipo: string;
+    destino: string | null;
+    meses: (number | null)[] | null;
+    max: number;
+    localidadEOH: string | null;
+  };
+  const raiz = document.querySelector<HTMLElement>('[data-mapa]');
+  const fuente = document.getElementById('datos-mapa');
+  if (raiz && fuente) {
+    type Tx = Record<string, string> & { niveles: Record<string, string> };
+    type FotoPanel = { src: string; srcset: string } | null;
+    const D = JSON.parse(fuente.textContent || '{}') as {
+      rutas: Record<string, string>;
+      provincias: Record<string, string>;
+      fotos: Record<string, Record<string, FotoPanel>>;
+      estaciones: Record<string, string>;
+      locale: string;
+      meses: string[];
+      puntos: Punto[];
+      tx: Tx;
+    };
+    const estacionDeMes = (m: number) => (m === 11 || m <= 1 ? 'verano' : m <= 4 ? 'otono' : m <= 7 ? 'invierno' : 'primavera');
+    function fotoPanel(p: Punto) {
+      if (!p.destino || !D.fotos[p.destino]) return '';
+      const est = estacionDeMes(mes);
+      const f = D.fotos[p.destino][est];
+      if (!f) return '';
+      return `<figure class="foto-panel"><img src="${esc(f.src)}" srcset="${esc(f.srcset)}" sizes="(max-width: 56rem) 100vw, 27rem" alt="${esc(p.nombre)}" loading="lazy" /><figcaption>${esc(D.estaciones[est])} · ${esc(D.meses[mes])}</figcaption></figure>`;
+    }
+    const T = D.tx;
+    const llenar = (plantilla: string, v: Record<string, string | number>) =>
+      plantilla.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ''));
+    const P = D.puntos;
+    const botones = [...raiz.querySelectorAll<HTMLButtonElement>('[data-mes]')];
+    const resumen = raiz.querySelector<HTMLElement>('[data-resumen]')!;
+    const detalle = raiz.querySelector<HTMLElement>('[data-detalle]')!;
+    const listas = raiz.querySelector<HTMLElement>('[data-listas]')!;
+    const nombreMes = raiz.querySelector<HTMLElement>('[data-mes-nombre]')!;
+    const recorrer = raiz.querySelector<HTMLButtonElement>('[data-recorrer]')!;
+    const recorrerTexto = raiz.querySelector<HTMLElement>('[data-recorrer-texto]')!;
+    const nf = new Intl.NumberFormat(D.locale);
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+    let mes = 0;
+    let seleccion: { tipo: 'punto'; id: number } | { tipo: 'provincia'; nombre: string } | null = null;
+    let reloj: number | undefined;
+
+    const rel = (p: Punto, i: number) => (p.meses && p.meses[i] != null && p.max ? (p.meses[i] as number) / p.max : null);
+    const nivel = (r: number | null) => (r === null ? T.niveles.sin : r >= 0.8 ? T.niveles.alta : r <= 0.55 ? T.niveles.baja : T.niveles.media);
+    const conDatos = (i: number) => P.filter((p) => rel(p, i) !== null).length;
+
+    function mini(p: Punto) {
+      if (!p.meses) return '';
+      return `<ol class="mini-mapa" aria-hidden="true">${p.meses
+        .map((v, i) => {
+          const r = rel(p, i);
+          const cls = r === null ? 'n' : r >= 0.8 ? 'a' : r <= 0.55 ? 'b' : 'm';
+          return `<li class="${cls}${i === mes ? ' actual' : ''}" style="--h:${r ?? 0}"><span>${D.meses[i].slice(0, 1)}</span></li>`;
+        })
+        .join('')}</ol>`;
+    }
+
+    function fichaPunto(p: Punto) {
+      const r = rel(p, mes);
+      const v = p.meses ? p.meses[mes] : null;
+      const enlace = p.destino && D.rutas[p.destino] ? `<a class="ir" href="${D.rutas[p.destino]}">${esc(llenar(T.ver, { n: p.nombre }))}</a>` : '';
+      if (!p.meses) {
+        return `${fotoPanel(p)}<p class="etiqueta">${esc(p.provincia)}</p><h3>${esc(p.nombre)}</h3>
+          <p class="ayuda">${esc(T.atraccion)}</p>${enlace}
+          <button type="button" class="volver" data-volver>${esc(T.volver)}</button>`;
+      }
+      const estado =
+        r === null
+          ? esc(llenar(T.sinDatosMes, { mes: D.meses[mes] }))
+          : llenar(T.estado, { nivel: nivel(r).replace(/^./, (c) => c.toUpperCase()), v: nf.format(v as number), pct: Math.round(r * 100) })
+              .replace('<strong>', `<strong class="estado ${r >= 0.8 ? 'lleno' : r <= 0.55 ? 'calmo' : ''}">`);
+      const zona = p.tipo === 'zona' ? `<p class="nota-zona">${esc(T.zona)}</p>` : '';
+      return `${fotoPanel(p)}<p class="etiqueta">${esc(p.provincia)} · ${esc(D.meses[mes])}</p><h3>${esc(p.nombre)}</h3>
+        <p>${estado}</p>${mini(p)}${zona}${enlace}
+        <button type="button" class="volver" data-volver>${esc(T.volver)}</button>`;
+    }
+
+    function fichaProvincia(nombre: string) {
+      const lista = P.filter((p) => p.provincia === nombre);
+      const items = lista.length
+        ? lista
+            .map((p) => {
+              const r = rel(p, mes);
+              return `<li><button type="button" data-ir-punto="${p.id}"><span class="dot ${r === null ? (p.meses ? 'n' : 'atr') : r >= 0.8 ? 'a' : r <= 0.55 ? 'b' : 'm'}"></span>${esc(p.nombre)}<em>${p.meses ? nivel(r) : esc(T.sinMedicionCorto)}</em></button></li>`;
+            })
+            .join('')
+        : `<li class="ayuda">${esc(T.sinLugares)}</li>`;
+      const linkProv = D.provincias[nombre] ? `<a class="ir" href="${D.provincias[nombre]}">${esc(llenar(T.verProvincia, { n: nombre }))}</a>` : '';
+      return `<p class="etiqueta">${esc(T.provincia)} · ${esc(D.meses[mes])}</p><h3>${esc(nombre)}</h3><ul class="lugares">${items}</ul>${linkProv}
+        <button type="button" class="volver" data-volver>${esc(T.volver)}</button>`;
+    }
+
+    function pintarListas() {
+      const medidos = P.filter((p) => rel(p, mes) !== null).sort((a, b) => b.max - a.max);
+      const llenos = medidos.filter((p) => (rel(p, mes) as number) >= 0.8).slice(0, 6);
+      const calmos = medidos.filter((p) => (rel(p, mes) as number) <= 0.55).slice(0, 6);
+      const li = (p: Punto) => `<li><button type="button" data-ir-punto="${p.id}">${esc(p.nombre)}</button></li>`;
+      listas.innerHTML = medidos.length
+        ? `<div><p class="t lleno">${esc(T.listaAlta)}</p><ul>${llenos.map(li).join('') || `<li class="ayuda">${esc(T.ninguno)}</li>`}</ul></div>
+           <div><p class="t calmo">${esc(T.listaTranquilos)}</p><ul>${calmos.map(li).join('') || `<li class="ayuda">${esc(T.ninguno)}</li>`}</ul></div>`
+        : `<p class="ayuda">${esc(llenar(T.sinDatosMes, { mes: D.meses[mes] }))}</p>`;
+    }
+
+    const movil = window.matchMedia('(max-width: 56rem)');
+    const cerrar = `<button type="button" class="cerrar" data-volver aria-label="${esc(T.cerrar)}">×</button>`;
+    function mostrar() {
+      raiz!.querySelectorAll('.activo').forEach((n) => n.classList.remove('activo'));
+      if (!seleccion) {
+        detalle.hidden = true;
+        resumen.hidden = false;
+        return;
+      }
+      resumen.hidden = !movil.matches;
+      detalle.hidden = false;
+      if (seleccion.tipo === 'punto') {
+        const p = P[seleccion.id];
+        detalle.innerHTML = cerrar + fichaPunto(p);
+        raiz!.querySelector(`[data-punto="${p.id}"]`)?.classList.add('activo');
+        raiz!.querySelector(`[data-provincia="${CSS.escape(p.provincia)}"]`)?.classList.add('activo');
+      } else {
+        detalle.innerHTML = cerrar + fichaProvincia(seleccion.nombre);
+        raiz!.querySelector(`[data-provincia="${CSS.escape(seleccion.nombre)}"]`)?.classList.add('activo');
+      }
+    }
+
+    function elegirMes(i: number) {
+      mes = i;
+      botones.forEach((b, j) => b.setAttribute('aria-checked', String(j === i)));
+      nombreMes.textContent = D.meses[i];
+      raiz!.querySelectorAll<SVGAElement>('[data-punto]').forEach((a) => {
+        const p = P[Number(a.dataset.punto)];
+        if (!p.meses) return;
+        const r = rel(p, i);
+        a.classList.remove('nulo', 'alta', 'media', 'baja');
+        a.classList.add(r === null ? 'nulo' : r >= 0.8 ? 'alta' : r <= 0.55 ? 'baja' : 'media');
+      });
+      pintarListas();
+      mostrar();
+    }
+
+    function parar() {
+      window.clearInterval(reloj);
+      reloj = undefined;
+      recorrer.setAttribute('aria-pressed', 'false');
+      recorrerTexto.textContent = T.recorrer;
+    }
+
+    botones.forEach((b) => b.addEventListener('click', () => { parar(); elegirMes(Number(b.dataset.mes)); }));
+    raiz.querySelector('.meses')!.addEventListener('keydown', (e) => {
+      const k = (e as KeyboardEvent).key;
+      if (k !== 'ArrowRight' && k !== 'ArrowLeft') return;
+      e.preventDefault();
+      const n = (mes + (k === 'ArrowRight' ? 1 : 11)) % 12;
+      elegirMes(n);
+      botones[n].focus();
+    });
+    recorrer.addEventListener('click', () => {
+      if (reloj) return parar();
+      recorrer.setAttribute('aria-pressed', 'true');
+      recorrerTexto.textContent = T.pausar;
+      reloj = window.setInterval(() => {
+        let n = (mes + 1) % 12;
+        if (conDatos(n) === 0) n = (n + 1) % 12;
+        elegirMes(n);
+      }, 1300);
+    });
+
+    raiz.addEventListener('click', (e) => {
+      const t = e.target as Element;
+      const punto = t.closest<SVGAElement>('[data-punto]');
+      const irPunto = t.closest<HTMLElement>('[data-ir-punto]');
+      const prov = t.closest<SVGPathElement>('[data-provincia]');
+      if (punto) {
+        e.preventDefault();
+        seleccion = { tipo: 'punto', id: Number(punto.dataset.punto) };
+      } else if (irPunto) {
+        seleccion = { tipo: 'punto', id: Number(irPunto.dataset.irPunto) };
+      } else if (t.closest('[data-volver]')) {
+        seleccion = null;
+      } else if (prov) {
+        seleccion = { tipo: 'provincia', nombre: prov.dataset.provincia! };
+      } else return;
+      mostrar();
+      if (seleccion && movil.matches) detalle.querySelector<HTMLElement>('.cerrar')?.focus({ preventScroll: true });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && seleccion) {
+        seleccion = null;
+        mostrar();
+      }
+    });
+    movil.addEventListener('change', mostrar);
+    // Provincias con avisos oficiales vigentes: borde de alerta en el mapa.
+    window.addEventListener('avisos:listos', (e) => {
+      const datos = (e as CustomEvent).detail as { avisos: { nivel: string; provincias: string[] }[] };
+      const peso: Record<string, number> = { amarillo: 1, naranja: 2, rojo: 3 };
+      const porProv = new Map<string, number>();
+      for (const a of datos.avisos) for (const p of a.provincias) porProv.set(p, Math.max(porProv.get(p) ?? 0, peso[a.nivel] ?? 0));
+      porProv.forEach((n, p) => {
+        if (n > 0) raiz!.querySelector(`[data-provincia="${CSS.escape(p)}"]`)?.classList.add('aviso', `aviso-${n}`);
+      });
+      const leer = raiz!.querySelector<HTMLElement>('[data-leer]');
+      const estado = leer?.querySelector('[data-leer-estado]');
+      if (leer && estado) {
+        const n = [...porProv.values()].filter((v) => v > 0).length;
+        const [uno, varios] = JSON.parse(leer.dataset.txHay || '["",""]');
+        estado.textContent = n === 0 ? leer.dataset.txSin || '' : n === 1 ? uno : varios.replace('2', String(n));
+      }
+    });
+    // En celular, la hoja del detalle se cierra sola cuando el mapa sale de la pantalla.
+    const lienzo = raiz.querySelector('.lienzo');
+    if (lienzo && 'IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => {
+        if (!e.isIntersecting && movil.matches && seleccion) {
+          seleccion = null;
+          mostrar();
+        }
+      }).observe(lienzo);
+    }
+
+    // Arranca en el mes actual; si ese mes todavía no tiene datos, en el último que sí tenga.
+    let inicial = new Date().getMonth();
+    for (let k = 0; k < 12 && conDatos(inicial) < P.length / 4; k++) inicial = (inicial + 11) % 12;
+    elegirMes(inicial);
+  }
+</script>
+
+<style>
+  .mapa {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+    grid-template-areas: 'lienzo columna';
+    gap: 1.4rem 3rem;
+    align-items: start;
+  }
+  .columna {
+    grid-area: columna;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+  /* La columna acompaña al mapa al bajar solo si entra entera en la pantalla. */
+  @media (min-height: 62rem) {
+    .columna { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 4.5rem); }
+  }
+  .controles { grid-area: controles; }
+  .lienzo { grid-area: lienzo; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+  .panel { grid-area: panel; min-width: 0; }
+  .como-leer { grid-area: leer; min-width: 0; }
+
+  .meses { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin-top: 0.5rem; }
+  .meses button, .recorrer {
+    font-family: var(--f-dato);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--tinta);
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-radius: 2px;
+    padding: 0.55rem 0;
+    cursor: pointer;
+  }
+  .meses button:hover { border-color: var(--tinta-2); }
+  .meses button[aria-checked='true'] { background: var(--celeste); color: #0d1b26; border-color: var(--celeste); font-weight: 500; }
+  .recorrer { margin-top: 0.6rem; padding: 0.55rem 0.9rem; background: transparent; }
+  .recorrer[aria-pressed='true'] { border-color: var(--cerro); color: var(--cerro); }
+  .recorrer .icono { font-size: 0.7rem; }
+
+  svg { width: 100%; max-width: 30rem; height: auto; display: block; overflow: visible; }
+  .malvinas path { fill: var(--papel-2); stroke: var(--tinta-2); stroke-width: 0.7; cursor: pointer; }
+  .malvinas text { font-family: var(--f-dato); font-size: 8.5px; letter-spacing: 0.04em; fill: var(--tinta-2); text-transform: uppercase; }
+  .antartida rect { fill: none; stroke: var(--linea); stroke-width: 1; }
+  .antartida text { font-family: var(--f-dato); font-size: 8.5px; letter-spacing: 0.04em; fill: var(--tinta-2); text-transform: uppercase; }
+  .antartida .sector { fill: none; stroke: var(--tinta-2); stroke-width: 0.8; stroke-dasharray: 3 2; opacity: 0.7; }
+  .antartida .tierra { fill: var(--papel-2); stroke: var(--tinta-2); stroke-width: 0.5; }
+  .provincias path {
+    fill: var(--papel-2);
+    /* Límites marcados para que todas las provincias se lean, tengan aviso o no. */
+    stroke: color-mix(in oklab, var(--tinta-2) 70%, var(--papel));
+    stroke-width: 1.1;
+    cursor: pointer;
+    transition: fill 0.2s;
+  }
+  .provincias path:focus { outline: none; }
+  .mapa { --aviso-1: #e2b30d; --aviso-2: #e0731a; --aviso-3: #c8322a; }
+  .provincias path.aviso { stroke: var(--aviso-1); stroke-width: 2.4; }
+  .provincias path.aviso-2 { stroke: var(--aviso-2); }
+  .provincias path.aviso-3 { stroke: var(--aviso-3); }
+  .provincias path:hover { fill: color-mix(in oklab, var(--papel-2) 70%, var(--tinta-2)); }
+  .provincias path.activo { fill: color-mix(in oklab, var(--papel-2) 45%, var(--celeste)); }
+  .punto { cursor: pointer; outline: none; }
+  .punto .toque { fill: transparent; stroke: none; }
+  .punto circle.marca {
+    fill: var(--c, var(--arena));
+    stroke: var(--papel);
+    stroke-width: 1.2;
+    transition: fill 0.45s ease;
+  }
+  .punto.alta { --c: var(--cerro); }
+  .punto.media { --c: var(--arena); }
+  .punto.baja { --c: var(--glaciar); }
+  .punto.nulo .marca { fill: var(--papel); stroke: var(--tinta-2); stroke-dasharray: 2 2; }
+  .punto.destacado .marca { stroke: var(--tinta); stroke-width: 1.6; }
+  .punto.atraccion .marca { fill: var(--papel); stroke: var(--tinta); stroke-width: 1.6; }
+  .punto:hover .marca, .punto:focus-visible .marca, .punto.activo .marca { stroke: var(--tinta); stroke-width: 3; }
+
+  .como-leer { border: 1px solid var(--linea); border-radius: 4px; padding: 0.8rem 1rem; background: var(--papel); }
+  .como-leer h3 { margin: 0 0 0.6rem; font-size: 0.75rem; }
+  .como-leer .sub { margin: 0.2rem 0 0.4rem; font-weight: 600; font-size: 0.92rem; }
+  .como-leer .nota { margin: 0.4rem 0 0.8rem; font-size: 0.82rem; color: var(--tinta-2); line-height: 1.45; }
+  .como-leer .nota:last-child { margin-bottom: 0; }
+  .como-leer .nota strong { color: var(--tinta); font-weight: 600; }
+  .claves { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
+  .claves li { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--f-dato); font-size: 0.72rem; color: var(--tinta-2); }
+  .claves i { width: 0.7rem; height: 0.7rem; border-radius: 50%; }
+  .claves i.a { background: var(--cerro); }
+  .claves i.m { background: var(--arena); }
+  .claves i.b { background: var(--glaciar); }
+  .claves i.n { border: 1px dashed var(--tinta-2); }
+  .claves .atr i { width: 0.6rem; height: 0.6rem; border-radius: 0; border: 1.5px solid var(--tinta); transform: rotate(45deg); }
+  .bordes i { width: 1.4rem; height: 0; border-radius: 0; border-top: 3px solid; }
+  .bordes i.b1 { border-color: var(--aviso-1); }
+  .bordes i.b2 { border-color: var(--aviso-2); }
+  .bordes i.b3 { border-color: var(--aviso-3); }
+
+  .panel :global(h3) { font-size: 2rem; margin: 0.2rem 0 0.6rem; }
+  .panel :global(p) { margin: 0 0 0.8rem; }
+  .panel :global(.ayuda) { color: var(--tinta-2); }
+  .panel :global(.etiqueta) { margin: 0; }
+  .panel { border-top: 2px solid var(--tinta); padding-top: 0.8rem; }
+  .panel :global(.listas) { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; }
+  .panel :global(.listas .t) { font-family: var(--f-dato); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+  .panel :global(.lleno) { color: var(--cerro); }
+  .panel :global(.calmo) { color: var(--glaciar); }
+  .panel :global(ul) { list-style: none; margin: 0; padding: 0; }
+  .panel :global(li button) {
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--tinta);
+    background: none;
+    border: 0;
+    padding: 0.25rem 0;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-color: var(--linea);
+    text-underline-offset: 0.2em;
+  }
+  .panel :global(li button:hover) { text-decoration-color: var(--tinta); }
+  .panel :global(.lugares li button) { display: flex; align-items: center; gap: 0.5rem; width: 100%; text-decoration: none; border-bottom: 1px solid var(--linea); padding: 0.45rem 0; }
+  .panel :global(.lugares em) { margin-left: auto; font-style: normal; font-family: var(--f-dato); font-size: 0.7rem; color: var(--tinta-2); }
+  .panel :global(.dot) { width: 0.7rem; height: 0.7rem; border-radius: 50%; flex: none; background: var(--arena); }
+  .panel :global(.dot.a) { background: var(--cerro); }
+  .panel :global(.dot.b) { background: var(--glaciar); }
+  .panel :global(.dot.n) { background: var(--papel); border: 1px dashed var(--tinta-2); }
+  .panel :global(.dot.atr) { border-radius: 0; transform: rotate(45deg) scale(0.85); background: var(--papel); border: 1.5px solid var(--tinta); }
+  .panel :global(.ir) {
+    display: inline-block;
+    margin: 0.4rem 0 1rem;
+    font-family: var(--f-dato);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .panel :global(.cerrar) {
+    float: right;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: -0.4rem -0.3rem 0 0.5rem;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--tinta);
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  @keyframes subir { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .panel :global(.volver) {
+    display: block;
+    font-family: var(--f-dato);
+    font-size: 0.75rem;
+    color: var(--tinta-2);
+    background: none;
+    border: 0;
+    padding: 0.4rem 0;
+    cursor: pointer;
+  }
+  .panel :global(.foto-panel) { margin: 0 0 0.8rem; position: relative; }
+  .panel :global(.foto-panel img) { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 3px; display: block; background: var(--papel-2); }
+  .panel :global(.foto-panel figcaption) {
+    position: absolute;
+    left: 0.5rem;
+    bottom: 0.5rem;
+    font-family: var(--f-dato);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    background: rgb(8 16 22 / 0.6);
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+  }
+  .panel :global(.nota-zona) { font-size: 0.85rem; color: var(--tinta-2); }
+  .panel :global(.mini-mapa) {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 3px;
+    align-items: end;
+    height: 4.5rem;
+    margin: 0.4rem 0 1rem;
+    padding-bottom: 1.1rem;
+    position: relative;
+  }
+  .panel :global(.mini-mapa li) { height: calc(var(--h) * 100%); min-height: 2px; border-radius: 1px; position: relative; background: var(--arena); }
+  .panel :global(.mini-mapa li.a) { background: var(--cerro); }
+  .panel :global(.mini-mapa li.b) { background: var(--glaciar); }
+  .panel :global(.mini-mapa li.n) { background: var(--linea); }
+  .panel :global(.mini-mapa li.actual) { outline: 2px solid var(--tinta); outline-offset: 1px; }
+  .panel :global(.mini-mapa li span) {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.2rem;
+    text-align: center;
+    font-family: var(--f-dato);
+    font-size: 0.62rem;
+    color: var(--tinta-2);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 56rem) {
+    .mapa {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'controles' 'lienzo' 'leer' 'panel';
+      grid-template-rows: auto;
+    }
+    .columna { display: contents; }
+    /* La barra de meses queda a mano mientras se recorre el mapa. */
+    .controles {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 4;
+      background: var(--papel);
+      padding-block: 0.5rem 0.6rem;
+      box-shadow: 0 1px 0 var(--linea);
+    }
+    .controles .etiqueta { display: none; }
+    .meses { margin-top: 0; }
+    .meses button { min-height: 2.6rem; }
+    /* El detalle de un punto se abre como hoja desde abajo, sin perder el mapa de vista. */
+    .panel :global([data-detalle]:not([hidden])) {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      max-height: 62svh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: var(--papel);
+      border-top: 4px solid var(--celeste);
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -10px 30px rgb(0 0 0 / 0.22);
+      padding: 1.1rem max(16px, env(safe-area-inset-right, 0px)) calc(1rem + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+      animation: subir 0.22s ease-out;
+    }
+    .panel :global(.cerrar) {
+    float: right;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: -0.4rem -0.3rem 0 0.5rem;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--tinta);
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  @keyframes subir { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .panel :global(.volver) { display: none; }
+    .panel :global(.mini-mapa) { height: 3.6rem; }
+    .meses { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; }
+    .meses button { font-size: 0.62rem; padding: 0.5rem 0; letter-spacing: 0; }
+    .recorrer { display: none; }
+  }
+</style>

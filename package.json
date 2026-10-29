@@ -1,0 +1,27 @@
+{
+  "name": "argentina-todo-el-ano",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "fotos": "node scripts/fotos.mjs",
+    "datos": "python scripts/eoh.py",
+    "postbuild": "node scripts/verificar-csp.mjs",
+    "buscar-fotos": "node scripts/buscar-fotos.mjs"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "^9.0.5",
+    "@fontsource-variable/source-serif-4": "^5.3.1",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "astro": "5.18.2",
+    "d3-geo": "^3.1.1",
+    "fast-xml-parser": "^5.2.5"
+  },
+  "devDependencies": {
+    "sharp": "0.34.5"
+  }
+}

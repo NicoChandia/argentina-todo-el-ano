@@ -1,0 +1,835 @@
+{
+ "salta": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Carnaval",
+    "pt": "Carnaval",
+    "en": "Carnival"
+   },
+   "texto": {
+    "es": "Carnaval en toda la provincia, con comparsas y coplas. En los Valles, la Serenata a Cafayate llena de música las noches de febrero.",
+    "pt": "Carnaval em toda a província, com comparsas e coplas. Nos Vales, a Serenata a Cafayate enche de música as noites de fevereiro.",
+    "en": "Carnival across the province, with troupes and coplas. In the Valleys, the Serenata a Cafayate fills February nights with music."
+   }
+  },
+  {
+   "mes": 6,
+   "titulo": {
+    "es": "Güemes",
+    "pt": "Güemes",
+    "en": "Güemes"
+   },
+   "texto": {
+    "es": "El 16 y 17 de junio, miles de gauchos rinden homenaje a Martín Miguel de Güemes con la Guardia Bajo las Estrellas y un gran desfile.",
+    "pt": "Em 16 e 17 de junho, milhares de gaúchos homenageiam Martín Miguel de Güemes com a Guardia Bajo las Estrellas e um grande desfile.",
+    "en": "On June 16 and 17, thousands of gauchos honor Martín Miguel de Güemes with an all-night vigil and a large parade."
+   }
+  },
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Pachamama",
+    "pt": "Pachamama",
+    "en": "Pachamama"
+   },
+   "texto": {
+    "es": "El 1 de agosto se hacen ofrendas a la Madre Tierra en todo el Norte: se 'da de comer' a la tierra y se toma caña con ruda.",
+    "pt": "Em 1º de agosto se fazem oferendas à Mãe Terra em todo o Norte: 'dá-se de comer' à terra e toma-se cachaça com arruda.",
+    "en": "On August 1, offerings are made to Mother Earth across the north: the earth is 'fed' and people drink cane spirit with rue."
+   }
+  },
+  {
+   "mes": 9,
+   "titulo": {
+    "es": "El Milagro",
+    "pt": "O Milagre",
+    "en": "El Milagro"
+   },
+   "texto": {
+    "es": "Cada 15 de septiembre, miles de peregrinos llegan caminando desde toda la provincia para la procesión del Señor y la Virgen del Milagro.",
+    "pt": "Todo 15 de setembro, milhares de peregrinos chegam caminhando de toda a província para a procissão do Senhor e da Virgem do Milagre.",
+    "en": "Every September 15, thousands of pilgrims walk in from across the province for the procession of the Lord and Virgin of the Miracle."
+   }
+  }
+ ],
+ "purmamarca": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Carnaval de la Quebrada",
+    "pt": "Carnaval da Quebrada",
+    "en": "Quebrada Carnival"
+   },
+   "texto": {
+    "es": "El carnaval más famoso del Norte: se desentierra al Pujllay, hay comparsas de diablos, harina, albahaca y coplas en cada pueblo.",
+    "pt": "O carnaval mais famoso do Norte: desenterra-se o Pujllay, há comparsas de diabos, farinha, manjericão e coplas em cada povoado.",
+    "en": "The north's most famous carnival: the Pujllay is unearthed, and every village fills with devil troupes, flour, basil and coplas."
+   }
+  },
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Pachamama",
+    "pt": "Pachamama",
+    "en": "Pachamama"
+   },
+   "texto": {
+    "es": "El 1 de agosto las familias hacen ofrendas a la Madre Tierra. Es una ceremonia íntima: se puede acompañar con respeto.",
+    "pt": "Em 1º de agosto as famílias fazem oferendas à Mãe Terra. É uma cerimônia íntima: dá para acompanhar com respeito.",
+    "en": "On August 1, families make offerings to Mother Earth. It's an intimate ceremony that visitors can join respectfully."
+   }
+  }
+ ],
+ "san-salvador-de-jujuy": [
+  {
+   "mes": 9,
+   "titulo": {
+    "es": "Fiesta de los Estudiantes",
+    "pt": "Festa dos Estudantes",
+    "en": "Students' Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional de los Estudiantes llena la ciudad con desfiles de carrozas gigantes que los colegios construyen durante meses.",
+    "pt": "A Festa Nacional dos Estudantes enche a cidade com desfiles de carros alegóricos gigantes que as escolas constroem durante meses.",
+    "en": "The National Students' Festival fills the city with parades of giant floats that schools spend months building."
+   }
+  },
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Pachamama",
+    "pt": "Pachamama",
+    "en": "Pachamama"
+   },
+   "texto": {
+    "es": "El 1 de agosto se hacen ofrendas a la Madre Tierra en toda la provincia.",
+    "pt": "Em 1º de agosto se fazem oferendas à Mãe Terra em toda a província.",
+    "en": "On August 1, offerings are made to Mother Earth throughout the province."
+   }
+  }
+ ],
+ "cafayate": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Serenata a Cafayate",
+    "pt": "Serenata a Cafayate",
+    "en": "Serenata a Cafayate"
+   },
+   "texto": {
+    "es": "Uno de los grandes festivales de folclore del país, en plena época de calor y viñedos cargados.",
+    "pt": "Um dos grandes festivais de folclore do país, em plena época de calor e vinhedos carregados.",
+    "en": "One of the country's great folk festivals, in the heat of summer with the vineyards heavy with grapes."
+   }
+  },
+  {
+   "mes": 3,
+   "titulo": {
+    "es": "Cosecha",
+    "pt": "Colheita",
+    "en": "Harvest"
+   },
+   "texto": {
+    "es": "Es época de vendimia en los Valles Calchaquíes: las bodegas están en plena cosecha de uva.",
+    "pt": "É época de vindima nos Vales Calchaquíes: as vinícolas estão em plena colheita da uva.",
+    "en": "It's harvest time in the Calchaquí Valleys, with wineries busy picking grapes."
+   }
+  }
+ ],
+ "san-miguel-de-tucuman": [
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "9 de Julio",
+    "pt": "9 de Julho",
+    "en": "July 9"
+   },
+   "texto": {
+    "es": "El Día de la Independencia se celebra donde se declaró: actos, desfile y la Casa Histórica abierta.",
+    "pt": "O Dia da Independência é celebrado onde foi declarada: atos, desfile e a Casa Histórica aberta.",
+    "en": "Independence Day is celebrated where it was declared, with ceremonies, a parade and the Casa Histórica open to visitors."
+   }
+  }
+ ],
+ "catamarca": [
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Fiesta del Poncho",
+    "pt": "Festa do Poncho",
+    "en": "Poncho Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional del Poncho reúne tejedores, artesanos y músicos de todo el país durante las vacaciones de invierno.",
+    "pt": "A Festa Nacional do Poncho reúne tecelões, artesãos e músicos de todo o país durante as férias de inverno.",
+    "en": "The National Poncho Festival brings together weavers, artisans and musicians from across the country during the winter holidays."
+   }
+  }
+ ],
+ "la-rioja": [
+  {
+   "mes": 12,
+   "titulo": {
+    "es": "Tinkunaco",
+    "pt": "Tinkunaco",
+    "en": "Tinkunaco"
+   },
+   "texto": {
+    "es": "Cada 31 de diciembre, el encuentro entre San Nicolás y el Niño Alcalde revive un pacto de paz entre españoles y diaguitas.",
+    "pt": "Todo 31 de dezembro, o encontro entre São Nicolau e o Menino Alcaide revive um pacto de paz entre espanhóis e diaguitas.",
+    "en": "Every December 31, the meeting of Saint Nicholas and the Child Mayor reenacts a peace pact between the Spanish and the Diaguita."
+   }
+  }
+ ],
+ "mendoza": [
+  {
+   "mes": 3,
+   "titulo": {
+    "es": "Vendimia",
+    "pt": "Vindima",
+    "en": "Grape Harvest Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional de la Vendimia, con su Vía Blanca, el Carrusel y el gran acto central en el teatro griego Frank Romero Day, a principios de marzo.",
+    "pt": "A Festa Nacional da Vindima, com a Vía Blanca, o Carrusel e o grande ato central no teatro grego Frank Romero Day, no começo de março.",
+    "en": "The National Grape Harvest Festival, with its night parade, the Carrusel and the main show at the Frank Romero Day amphitheater in early March."
+   }
+  },
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Nieve",
+    "pt": "Neve",
+    "en": "Snow season"
+   },
+   "texto": {
+    "es": "Temporada de esquí en la cordillera mendocina, de Penitentes a Las Leñas.",
+    "pt": "Temporada de esqui na cordilheira de Mendoza, de Penitentes a Las Leñas.",
+    "en": "Ski season in the Mendoza Andes, from Penitentes to Las Leñas."
+   }
+  }
+ ],
+ "valle-de-uco": [
+  {
+   "mes": 3,
+   "titulo": {
+    "es": "Cosecha",
+    "pt": "Colheita",
+    "en": "Harvest"
+   },
+   "texto": {
+    "es": "Plena vendimia: las bodegas cosechan y muchas ofrecen experiencias de cosecha.",
+    "pt": "Plena vindima: as vinícolas colhem e muitas oferecem experiências de colheita.",
+    "en": "Harvest in full swing: wineries are picking grapes and many offer harvest experiences."
+   }
+  },
+  {
+   "mes": 4,
+   "titulo": {
+    "es": "Otoño dorado",
+    "pt": "Outono dourado",
+    "en": "Golden autumn"
+   },
+   "texto": {
+    "es": "Los álamos y los viñedos se ponen amarillos y rojos frente a la cordillera.",
+    "pt": "Os álamos e os vinhedos ficam amarelos e vermelhos diante da cordilheira.",
+    "en": "Poplars and vineyards turn gold and red against the Andes."
+   }
+  }
+ ],
+ "malargue": [
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Esquí en Las Leñas",
+    "pt": "Esqui em Las Leñas",
+    "en": "Skiing at Las Leñas"
+   },
+   "texto": {
+    "es": "Plena temporada de nieve en Las Leñas, durante las vacaciones de invierno.",
+    "pt": "Plena temporada de neve em Las Leñas, durante as férias de inverno.",
+    "en": "Peak snow season at Las Leñas, during the winter holidays."
+   }
+  }
+ ],
+ "cordoba": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Cosquín",
+    "pt": "Cosquín",
+    "en": "Cosquín"
+   },
+   "texto": {
+    "es": "En el Valle de Punilla se hace el Festival Nacional de Folklore de Cosquín, el más importante del país, en la segunda quincena de enero.",
+    "pt": "No Vale de Punilla acontece o Festival Nacional de Folclore de Cosquín, o mais importante do país, na segunda quinzena de janeiro.",
+    "en": "In the Punilla Valley, the Cosquín National Folk Festival, the country's biggest, takes place in the second half of January."
+   }
+  }
+ ],
+ "villa-carlos-paz": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Teatro de verano",
+    "pt": "Teatro de verão",
+    "en": "Summer theater"
+   },
+   "texto": {
+    "es": "La temporada de teatro llena la ciudad de obras y espectáculos, y Cosquín está a media hora.",
+    "pt": "A temporada de teatro enche a cidade de peças e espetáculos, e Cosquín fica a meia hora.",
+    "en": "Theater season fills the town with plays and shows, and Cosquín is half an hour away."
+   }
+  }
+ ],
+ "villa-general-belgrano": [
+  {
+   "mes": 10,
+   "titulo": {
+    "es": "Fiesta de la Cerveza",
+    "pt": "Festa da Cerveja",
+    "en": "Beer Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional de la Cerveza, el Oktoberfest argentino, con desfiles, música centroeuropea y cerveceros de todo el país.",
+    "pt": "A Festa Nacional da Cerveja, a Oktoberfest argentina, com desfiles, música da Europa Central e cervejeiros de todo o país.",
+    "en": "The National Beer Festival, Argentina's Oktoberfest, with parades, Central European music and brewers from across the country."
+   }
+  },
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Chocolate Alpino",
+    "pt": "Chocolate Alpino",
+    "en": "Alpine Chocolate"
+   },
+   "texto": {
+    "es": "En las vacaciones de invierno, la Fiesta del Chocolate Alpino llena el pueblo de chocolaterías y música.",
+    "pt": "Nas férias de inverno, a Festa do Chocolate Alpino enche o povoado de chocolaterias e música.",
+    "en": "During the winter holidays, the Alpine Chocolate Festival fills the village with chocolate makers and music."
+   }
+  }
+ ],
+ "rosario": [
+  {
+   "mes": 6,
+   "titulo": {
+    "es": "Día de la Bandera",
+    "pt": "Dia da Bandeira",
+    "en": "Flag Day"
+   },
+   "texto": {
+    "es": "Cada 20 de junio, el Monumento a la Bandera es el centro del acto nacional y de una gran celebración popular.",
+    "pt": "Todo 20 de junho, o Monumento à Bandeira é o centro do ato nacional e de uma grande celebração popular.",
+    "en": "Every June 20, the Flag Memorial hosts the national ceremony and a big public celebration."
+   }
+  }
+ ],
+ "corrientes": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Chamamé",
+    "pt": "Chamamé",
+    "en": "Chamamé"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional del Chamamé llena la ciudad de música y baile durante diez noches.",
+    "pt": "A Festa Nacional do Chamamé enche a cidade de música e dança durante dez noites.",
+    "en": "The National Chamamé Festival fills the city with music and dancing for ten nights."
+   }
+  },
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Carnaval",
+    "pt": "Carnaval",
+    "en": "Carnival"
+   },
+   "texto": {
+    "es": "El carnaval correntino, con comparsas, plumas y lentejuelas en el corsódromo.",
+    "pt": "O carnaval de Corrientes, com escolas, plumas e lantejoulas no sambódromo.",
+    "en": "The Corrientes carnival, with troupes, feathers and sequins at the corsódromo."
+   }
+  }
+ ],
+ "paso-de-la-patria": [
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Fiesta del Dorado",
+    "pt": "Festa do Dourado",
+    "en": "Dorado Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional del Dorado reúne pescadores de todo el país en un gran concurso de pesca con devolución.",
+    "pt": "A Festa Nacional do Dourado reúne pescadores de todo o país num grande concurso de pesca com devolução.",
+    "en": "The National Dorado Festival brings anglers from across the country for a big catch-and-release competition."
+   }
+  }
+ ],
+ "gualeguaychu": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Carnaval del País",
+    "pt": "Carnaval do País",
+    "en": "Carnival"
+   },
+   "texto": {
+    "es": "Los sábados de enero y febrero desfilan las comparsas en el corsódromo, con miles de espectadores.",
+    "pt": "Aos sábados de janeiro e fevereiro as escolas desfilam no sambódromo, com milhares de espectadores.",
+    "en": "On Saturdays in January and February, troupes parade through the corsódromo before thousands of spectators."
+   }
+  },
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Carnaval del País",
+    "pt": "Carnaval do País",
+    "en": "Carnival"
+   },
+   "texto": {
+    "es": "Siguen los sábados de carnaval en el corsódromo, hasta el cierre de la temporada.",
+    "pt": "Continuam os sábados de carnaval no sambódromo, até o encerramento da temporada.",
+    "en": "Carnival Saturdays continue at the corsódromo until the season closes."
+   }
+  }
+ ],
+ "resistencia": [
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Bienal de Escultura",
+    "pt": "Bienal de Escultura",
+    "en": "Sculpture Biennial"
+   },
+   "texto": {
+    "es": "En los años pares, escultores de todo el mundo tallan sus obras al aire libre durante la Bienal Internacional.",
+    "pt": "Nos anos pares, escultores do mundo todo esculpem suas obras ao ar livre durante a Bienal Internacional.",
+    "en": "In even-numbered years, sculptors from around the world carve their works outdoors during the International Biennial."
+   }
+  }
+ ],
+ "herradura": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Fiesta de la Corvina",
+    "pt": "Festa da Corvina",
+    "en": "Corvina Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional de la Corvina de Río, con concurso de pesca, música y feria.",
+    "pt": "A Festa Nacional da Corvina de Rio, com concurso de pesca, música e feira.",
+    "en": "The National River Corvina Festival, with a fishing contest, music and a fair."
+   }
+  }
+ ],
+ "buenos-aires": [
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Festival de Tango",
+    "pt": "Festival de Tango",
+    "en": "Tango Festival"
+   },
+   "texto": {
+    "es": "El Festival y Mundial de Tango llena la ciudad de clases, milongas y competencias de baile.",
+    "pt": "O Festival e Mundial de Tango enche a cidade de aulas, milongas e competições de dança.",
+    "en": "The Tango Festival and World Cup fills the city with classes, milongas and dance competitions."
+   }
+  },
+  {
+   "mes": 4,
+   "titulo": {
+    "es": "Feria del Libro",
+    "pt": "Feira do Livro",
+    "en": "Book Fair"
+   },
+   "texto": {
+    "es": "La Feria Internacional del Libro, una de las más grandes del mundo en español, entre fines de abril y mayo.",
+    "pt": "A Feira Internacional do Livro, uma das maiores do mundo em espanhol, entre o fim de abril e maio.",
+    "en": "The International Book Fair, one of the largest in the Spanish-speaking world, from late April into May."
+   }
+  }
+ ],
+ "mar-del-plata": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Temporada de verano",
+    "pt": "Temporada de verão",
+    "en": "Summer season"
+   },
+   "texto": {
+    "es": "La ciudad balnearia más grande del país en su mejor momento: playas llenas, teatro y vida nocturna.",
+    "pt": "A maior cidade balneária do país no seu melhor momento: praias cheias, teatro e vida noturna.",
+    "en": "The country's biggest beach city at its peak: packed beaches, theater and nightlife."
+   }
+  },
+  {
+   "mes": 11,
+   "titulo": {
+    "es": "Festival de Cine",
+    "pt": "Festival de Cinema",
+    "en": "Film Festival"
+   },
+   "texto": {
+    "es": "El Festival Internacional de Cine de Mar del Plata, el único de su categoría en Latinoamérica, con funciones en toda la ciudad.",
+    "pt": "O Festival Internacional de Cinema de Mar del Plata, o único de sua categoria na América Latina, com sessões por toda a cidade.",
+    "en": "The Mar del Plata International Film Festival, the only one of its category in Latin America, with screenings across the city."
+   }
+  }
+ ],
+ "san-antonio-de-areco": [
+  {
+   "mes": 11,
+   "titulo": {
+    "es": "Fiesta de la Tradición",
+    "pt": "Festa da Tradição",
+    "en": "Tradition Festival"
+   },
+   "texto": {
+    "es": "Gauchos de todo el país desfilan a caballo, hay jineteadas, peñas y comidas criollas.",
+    "pt": "Gaúchos de todo o país desfilam a cavalo, há rodeios, peñas e comidas crioulas.",
+    "en": "Gauchos from across the country parade on horseback, with rodeos, folk music and traditional food."
+   }
+  }
+ ],
+ "bariloche": [
+  {
+   "mes": 8,
+   "titulo": {
+    "es": "Fiesta de la Nieve",
+    "pt": "Festa da Neve",
+    "en": "Snow Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional de la Nieve, con la bajada de antorchas en el Cerro Catedral y recitales, en plena temporada de esquí.",
+    "pt": "A Festa Nacional da Neve, com a descida de tochas no Cerro Catedral e shows, em plena temporada de esqui.",
+    "en": "The National Snow Festival, with the torchlight descent on Cerro Catedral and concerts, at the height of ski season."
+   }
+  },
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Esquí",
+    "pt": "Esqui",
+    "en": "Skiing"
+   },
+   "texto": {
+    "es": "Vacaciones de invierno y temporada de esquí en el Cerro Catedral: es el mes más concurrido.",
+    "pt": "Férias de inverno e temporada de esqui no Cerro Catedral: é o mês mais movimentado.",
+    "en": "Winter holidays and ski season on Cerro Catedral: the busiest month of the year."
+   }
+  },
+  {
+   "mes": [
+    6,
+    9
+   ],
+   "titulo": {
+    "es": "Nieve",
+    "pt": "Neve",
+    "en": "Snow"
+   },
+   "texto": {
+    "es": "Temporada de esquí en el Cerro Catedral, con menos gente que en julio.",
+    "pt": "Temporada de esqui no Cerro Catedral, com menos gente que em julho.",
+    "en": "Ski season on Cerro Catedral, with fewer people than in July."
+   }
+  }
+ ],
+ "ushuaia": [
+  {
+   "mes": 6,
+   "titulo": {
+    "es": "La noche más larga",
+    "pt": "A noite mais longa",
+    "en": "The Longest Night"
+   },
+   "texto": {
+    "es": "Alrededor del 21 de junio se celebra la Fiesta Nacional de la Noche Más Larga, y empieza la temporada de esquí en el Cerro Castor.",
+    "pt": "Por volta de 21 de junho se celebra a Festa Nacional da Noite Mais Longa, e começa a temporada de esqui no Cerro Castor.",
+    "en": "Around June 21, the National Longest Night Festival is held and ski season opens at Cerro Castor."
+   }
+  },
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Pingüinos y cruceros",
+    "pt": "Pinguins e cruzeiros",
+    "en": "Penguins and cruises"
+   },
+   "texto": {
+    "es": "Días larguísimos, pingüinos en Isla Martillo y cruceros que parten hacia la Antártida.",
+    "pt": "Dias longuíssimos, pinguins na Ilha Martillo e cruzeiros que partem rumo à Antártida.",
+    "en": "Very long days, penguins on Isla Martillo and cruises leaving for Antarctica."
+   }
+  },
+  {
+   "mes": [
+    7,
+    8,
+    9
+   ],
+   "titulo": {
+    "es": "Nieve",
+    "pt": "Neve",
+    "en": "Snow"
+   },
+   "texto": {
+    "es": "Temporada de esquí en el Cerro Castor y paseos en trineo con perros.",
+    "pt": "Temporada de esqui no Cerro Castor e passeios de trenó com cães.",
+    "en": "Ski season at Cerro Castor, plus dog-sled rides."
+   }
+  }
+ ],
+ "el-calafate": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Fiesta del Lago",
+    "pt": "Festa do Lago",
+    "en": "Lake Festival"
+   },
+   "texto": {
+    "es": "La Fiesta Nacional del Lago celebra el aniversario de la ciudad con recitales gratuitos frente al Lago Argentino.",
+    "pt": "A Festa Nacional do Lago celebra o aniversário da cidade com shows gratuitos diante do Lago Argentino.",
+    "en": "The National Lake Festival celebrates the town's anniversary with free concerts by Lago Argentino."
+   }
+  }
+ ],
+ "peninsula-valdes": [
+  {
+   "mes": 9,
+   "titulo": {
+    "es": "Ballenas",
+    "pt": "Baleias",
+    "en": "Whales"
+   },
+   "texto": {
+    "es": "Uno de los mejores meses para ver ballenas francas con sus crías en el golfo Nuevo.",
+    "pt": "Um dos melhores meses para ver baleias-francas com seus filhotes no golfo Nuevo.",
+    "en": "One of the best months to see southern right whales with their calves in Golfo Nuevo."
+   }
+  },
+  {
+   "mes": 3,
+   "titulo": {
+    "es": "Orcas",
+    "pt": "Orcas",
+    "en": "Orcas"
+   },
+   "texto": {
+    "es": "En Punta Norte las orcas se acercan a la costa para cazar crías de lobo marino.",
+    "pt": "Em Punta Norte as orcas se aproximam da costa para caçar filhotes de leão-marinho.",
+    "en": "At Punta Norte, orcas come close to shore to hunt sea lion pups."
+   }
+  },
+  {
+   "mes": [
+    6,
+    7,
+    8,
+    10,
+    11,
+    12
+   ],
+   "titulo": {
+    "es": "Ballenas",
+    "pt": "Baleias",
+    "en": "Whales"
+   },
+   "texto": {
+    "es": "Temporada de ballenas francas australes: salen avistajes desde Puerto Pirámides.",
+    "pt": "Temporada de baleias-francas-austrais: saem passeios de observação desde Puerto Pirámides.",
+    "en": "Southern right whale season: whale-watching trips leave from Puerto Pirámides."
+   }
+  },
+  {
+   "mes": [
+    4
+   ],
+   "titulo": {
+    "es": "Orcas",
+    "pt": "Orcas",
+    "en": "Orcas"
+   },
+   "texto": {
+    "es": "Todavía se pueden ver orcas cazando en Punta Norte.",
+    "pt": "Ainda é possível ver orcas caçando em Punta Norte.",
+    "en": "Orcas can still be seen hunting at Punta Norte."
+   }
+  }
+ ],
+ "puerto-madryn": [
+  {
+   "mes": 9,
+   "titulo": {
+    "es": "Ballenas",
+    "pt": "Baleias",
+    "en": "Whales"
+   },
+   "texto": {
+    "es": "Temporada alta de ballenas: se ven desde la costa de la ciudad y en salidas desde Puerto Pirámides.",
+    "pt": "Alta temporada de baleias: aparecem desde a orla da cidade e em saídas desde Puerto Pirámides.",
+    "en": "Peak whale season: whales can be seen from the city's shore and on boat trips from Puerto Pirámides."
+   }
+  },
+  {
+   "mes": [
+    6,
+    7,
+    8,
+    10,
+    11,
+    12
+   ],
+   "titulo": {
+    "es": "Ballenas",
+    "pt": "Baleias",
+    "en": "Whales"
+   },
+   "texto": {
+    "es": "Temporada de ballenas: se ven desde la costa y en salidas desde Puerto Pirámides.",
+    "pt": "Temporada de baleias: aparecem desde a orla e em saídas desde Puerto Pirámides.",
+    "en": "Whale season: whales can be seen from the shore and on trips from Puerto Pirámides."
+   }
+  }
+ ],
+ "punta-tombo": [
+  {
+   "mes": 12,
+   "titulo": {
+    "es": "Pichones",
+    "pt": "Filhotes",
+    "en": "Chicks"
+   },
+   "texto": {
+    "es": "Los pichones de pingüino ya nacieron y la colonia está en su momento de más actividad.",
+    "pt": "Os filhotes de pinguim já nasceram e a colônia está no seu momento de maior atividade.",
+    "en": "Penguin chicks have hatched and the colony is at its busiest."
+   }
+  },
+  {
+   "mes": [
+    9,
+    10,
+    11,
+    1,
+    2,
+    3,
+    4
+   ],
+   "titulo": {
+    "es": "Pingüinos",
+    "pt": "Pinguins",
+    "en": "Penguins"
+   },
+   "texto": {
+    "es": "La colonia está habitada: los pingüinos llegan en septiembre y se van en abril.",
+    "pt": "A colônia está habitada: os pinguins chegam em setembro e partem em abril.",
+    "en": "The colony is occupied: penguins arrive in September and leave in April."
+   }
+  }
+ ],
+ "tandil": [
+  {
+   "mes": 4,
+   "titulo": {
+    "es": "Semana Santa",
+    "pt": "Semana Santa",
+    "en": "Holy Week"
+   },
+   "texto": {
+    "es": "El Vía Crucis en el Monte Calvario atrae a miles de personas en Semana Santa, que según el año cae en marzo o abril.",
+    "pt": "A Via Sacra no Monte Calvario atrai milhares de pessoas na Semana Santa, que conforme o ano cai em março ou abril.",
+    "en": "The Stations of the Cross on Monte Calvario draw thousands during Holy Week, which falls in March or April depending on the year."
+   }
+  }
+ ],
+ "aconcagua": [
+  {
+   "mes": 1,
+   "titulo": {
+    "es": "Temporada de ascenso",
+    "pt": "Temporada de escalada",
+    "en": "Climbing season"
+   },
+   "texto": {
+    "es": "Es la temporada de expediciones a la cumbre; los senderos cortos de Horcones están abiertos todo el verano.",
+    "pt": "É a temporada de expedições ao cume; as trilhas curtas de Horcones ficam abertas todo o verão.",
+    "en": "Summit expedition season; the short Horcones trails are open all summer."
+   }
+  }
+ ],
+ "san-martin-de-los-andes": [
+  {
+   "mes": 7,
+   "titulo": {
+    "es": "Esquí en Chapelco",
+    "pt": "Esqui no Chapelco",
+    "en": "Skiing at Chapelco"
+   },
+   "texto": {
+    "es": "Temporada de nieve en el Cerro Chapelco, a pocos kilómetros del pueblo.",
+    "pt": "Temporada de neve no Cerro Chapelco, a poucos quilômetros do povoado.",
+    "en": "Snow season at Cerro Chapelco, a few kilometers from town."
+   }
+  }
+ ],
+ "el-chalten": [
+  {
+   "mes": 2,
+   "titulo": {
+    "es": "Fiesta del Trekking",
+    "pt": "Festa do Trekking",
+    "en": "Trekking Festival"
+   },
+   "texto": {
+    "es": "Se hace la Fiesta Nacional del Trekking, con caminatas, carreras de montaña y música en el pueblo.",
+    "pt": "Acontece a Festa Nacional do Trekking, com caminhadas, corridas de montanha e música na cidade.",
+    "en": "The National Trekking Festival takes place, with hikes, mountain races and music in town."
+   }
+  },
+  {
+   "mes": [
+    11,
+    12,
+    1,
+    3,
+    4
+   ],
+   "titulo": {
+    "es": "Trekking",
+    "pt": "Trekking",
+    "en": "Hiking season"
+   },
+   "texto": {
+    "es": "Temporada de trekking: los senderos a Laguna de los Tres y Laguna Torre están en su mejor momento y los días son largos.",
+    "pt": "Temporada de trekking: as trilhas até a Laguna de los Tres e a Laguna Torre estão no melhor momento e os dias são longos.",
+    "en": "Hiking season: the trails to Laguna de los Tres and Laguna Torre are at their best and days are long."
+   }
+  },
+  {
+   "mes": [
+    6,
+    7,
+    8
+   ],
+   "titulo": {
+    "es": "Invierno",
+    "pt": "Inverno",
+    "en": "Winter"
+   },
+   "texto": {
+    "es": "Temporada baja: muchos alojamientos y comercios cierran y los senderos altos tienen nieve.",
+    "pt": "Baixa temporada: muitas hospedagens e lojas fecham e as trilhas altas têm neve.",
+    "en": "Low season: many lodgings and shops close and the high trails are snowy."
+   }
+  }
+ ]
+}

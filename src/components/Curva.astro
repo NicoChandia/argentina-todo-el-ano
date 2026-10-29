@@ -1,0 +1,139 @@
+---
+// Barras de viajeros hospedados por mes para un destino.
+import type { Temporada } from '../lib/temporada';
+import { listaMeses, mesesCortos, numero, t as textos, type Lang } from '../i18n';
+
+interface Props {
+  t: Temporada;
+  nombre: string;
+  lang: Lang;
+}
+const { t, nombre, lang } = Astro.props;
+const x = textos(lang).curva;
+const MESES = mesesCortos(lang);
+const sep = lang === 'en' ? '' : ' ';
+const corto = (v: number) => (v >= 10000 ? `${Math.round(v / 1000)}${sep}${x.mil}` : v >= 1000 ? `${numero(v / 1000, lang, 1)}${sep}${x.mil}` : String(v));
+const marcas = [0.5, 1].map((f) => ({ f, v: Math.round((t.max * f) / 100) * 100 }));
+---
+<figure class="curva">
+  <div class="area" role="img" aria-label={x.aria(nombre, listaMeses(t.picos, lang), listaMeses(t.calmos, lang))}>
+    {marcas.map((m) => (
+      <div class="guia" style={`bottom: calc(1.6rem + (var(--alto) - 1.6rem) * var(--alto-util) * ${m.f})`}>
+        <span>{numero(m.v, lang)}</span>
+      </div>
+    ))}
+    <ol class="barras">
+      {t.meses.map((v, i) => (
+        <li class={`mes ${t.nivel[i] ?? 'sin'}`}>
+          <span class="valor">{v === null ? x.sinDato : corto(v)}{t.inciertos.includes(i) && v !== null ? '*' : ''}</span>
+          <span class="barra" style={`--h: ${t.relativo[i] ?? 0}`}></span>
+          <span class="nombre-mes">{MESES[i]}</span>
+        </li>
+      ))}
+    </ol>
+  </div>
+  <figcaption>
+    <span class="clave"><i class="alta"></i>{x.alta}</span>
+    <span class="clave"><i class="media"></i>{x.media}</span>
+    <span class="clave"><i class="baja"></i>{x.baja}</span>
+    <span class="nota">
+      {x.nota(t.anios)}
+      {t.inciertos.length > 0 && ` ${x.incierto}`}
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .curva { margin: 0; }
+  .area {
+    --alto: 15rem;
+    --alto-util: 0.78;
+    position: relative;
+    height: var(--alto);
+    padding-left: 3.4rem;
+  }
+  .guia {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--linea);
+  }
+  .guia span {
+    position: absolute;
+    left: 0;
+    top: -0.55rem;
+    font-family: var(--f-dato);
+    font-size: 0.68rem;
+    color: var(--tinta-2);
+    background: var(--papel);
+    padding-right: 0.3rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .barras {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(2px, 0.6vw, 8px);
+    align-items: end;
+    position: relative;
+  }
+  .mes {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    min-width: 0;
+  }
+  .barra {
+    display: block;
+    height: calc((var(--alto) - 1.6rem) * var(--alto-util) * var(--h));
+    min-height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--c);
+  }
+  .valor {
+    font-family: var(--f-dato);
+    font-size: 0.66rem;
+    text-align: center;
+    color: var(--tinta-2);
+    white-space: nowrap;
+    margin-bottom: 0.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .nombre-mes {
+    height: 1.6rem;
+    padding-top: 0.3rem;
+    font-family: var(--f-dato);
+    font-size: 0.72rem;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--tinta-2);
+    border-top: 1px solid var(--tinta-2);
+  }
+  .alta { --c: var(--cerro); }
+  .media { --c: var(--arena); }
+  .baja { --c: var(--glaciar); }
+  .sin { --c: var(--linea); }
+  .sin .valor { color: var(--tinta-2); font-style: italic; }
+  .alta .valor { color: var(--tinta); font-weight: 500; }
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+    margin-top: 0.9rem;
+    font-size: 0.85rem;
+    color: var(--tinta-2);
+  }
+  .clave { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--f-dato); font-size: 0.74rem; }
+  .clave i { width: 0.8rem; height: 0.8rem; border-radius: 2px; background: var(--c); }
+  .nota { flex-basis: 100%; }
+  @media (max-width: 34rem) {
+    .valor { writing-mode: vertical-rl; transform: rotate(180deg); margin-inline: auto; margin-bottom: 0.3rem; }
+    .area { --alto: 17rem; padding-left: 0; }
+    .guia span { display: none; }
+  }
+</style>

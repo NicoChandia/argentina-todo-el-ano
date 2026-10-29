@@ -1,0 +1,139 @@
+---
+// "Qué pasa cada mes": una fila de 12 meses y, al tocar uno, qué se vive ahí, cómo está
+// el clima, cuánta gente hay y qué llevar. Los gráficos de datos quedan debajo, plegados.
+import type { Mes } from '../lib/meses';
+import { mesesCortos, mesesLargos, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  nombre: string;
+  meses: Mes[];
+  /** Si hay gráficos de viajeros o de clima para mostrar debajo. */
+  datos?: boolean;
+}
+const { lang, nombre, meses, datos = true } = Astro.props;
+const T = {
+  es: { titulo: (n: string) => `${n}, mes a mes`, intro: 'Tocá un mes para ver qué pasa, cómo está el clima y cuánta gente hay.', llevar: 'Llevá', datos: 'Ver los datos completos (viajeros y clima)', gente: { alta: 'Mucha gente', media: 'Normal', baja: 'Tranquilo' } },
+  pt: { titulo: (n: string) => `${n}, mês a mês`, intro: 'Toque em um mês para ver o que acontece, como está o clima e quanta gente há.', llevar: 'Leve', datos: 'Ver os dados completos (viajantes e clima)', gente: { alta: 'Muita gente', media: 'Normal', baja: 'Tranquilo' } },
+  en: { titulo: (n: string) => `${n}, month by month`, intro: 'Tap a month to see what’s on, the weather and how busy it is.', llevar: 'Pack', datos: 'See the full data (travelers and weather)', gente: { alta: 'Busy', media: 'Normal', baja: 'Quiet' } },
+}[lang];
+const C = mesesCortos(lang);
+const L = mesesLargos(lang);
+const ICONO = { sol: '☀', nube: '⛅', lluvia: '🌧' } as const;
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+---
+<section class="envoltura mam" aria-labelledby="mam-titulo" data-mam>
+  <h2 id="mam-titulo">{T.titulo(nombre)}</h2>
+  <p class="intro">{T.intro}</p>
+  <div class="tira" role="tablist" aria-label={T.titulo(nombre)}>
+    {meses.map((m) => (
+      <button
+        type="button"
+        role="tab"
+        id={`mam-tab-${m.i}`}
+        aria-controls={`mam-panel-${m.i}`}
+        aria-selected={m.i === 0 ? 'true' : 'false'}
+        tabindex={m.i === 0 ? 0 : -1}
+        class={`mes g-${m.gente ?? 'sin'} ${m.evento ? 'con-evento' : ''}`}
+        data-mes={m.i}
+      >
+        <span class="c">{C[m.i]}</span>
+        <span class="tt">{m.titulo}</span>
+        {m.icono && <span class="i" aria-hidden="true">{ICONO[m.icono]}{m.max !== undefined ? ` ${m.max}°` : ''}</span>}
+      </button>
+    ))}
+  </div>
+  {meses.map((m) => (
+    <div class="panel" role="tabpanel" id={`mam-panel-${m.i}`} aria-labelledby={`mam-tab-${m.i}`} hidden={m.i !== 0} data-panel={m.i}>
+      <p class="etiqueta">{cap(L[m.i])}</p>
+      <h3>{m.titulo}</h3>
+      {m.texto && <p class="texto">{m.texto}</p>}
+      <ul class="datos">
+        {m.clima && <li><span aria-hidden="true">{m.icono ? ICONO[m.icono] : '🌡'}</span><span>{m.clima}</span></li>}
+        {m.gente && <li class={`g-${m.gente}`}><span aria-hidden="true">👥</span><span><strong>{T.gente[m.gente]}.</strong> {cap(m.genteTexto?.replace(/^[^:.]+[:.]\s*/, '') ?? '')}</span></li>}
+        {m.llevar.length > 0 && <li><span aria-hidden="true">🎒</span><span><strong>{T.llevar}:</strong> {m.llevar.join(', ')}.</span></li>}
+      </ul>
+    </div>
+  ))}
+  {meses.some((m) => m.gente) && <p class="leyenda" aria-hidden="true"><span class="p g-baja"></span>{T.gente.baja} <span class="p g-media"></span>{T.gente.media} <span class="p g-alta"></span>{T.gente.alta}</p>}
+  {datos && (
+    <details class="mas">
+      <summary>{T.datos}</summary>
+      <slot />
+    </details>
+  )}
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-mam]').forEach((s) => {
+    const tabs = [...s.querySelectorAll<HTMLButtonElement>('[data-mes]')];
+    const paneles = [...s.querySelectorAll<HTMLElement>('[data-panel]')];
+    const elegir = (n: number, foco = false) => {
+      tabs.forEach((t, i) => {
+        t.setAttribute('aria-selected', String(i === n));
+        t.tabIndex = i === n ? 0 : -1;
+      });
+      paneles.forEach((p, i) => (p.hidden = i !== n));
+      if (foco) tabs[n].focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => elegir(i));
+      t.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') elegir((i + 1) % 12, true);
+        if (e.key === 'ArrowLeft') elegir((i + 11) % 12, true);
+      });
+    });
+    elegir(new Date().getMonth());
+  });
+</script>
+
+<style>
+  .mam { margin-top: 4.5rem; }
+  .mam h2 { font-size: 2rem; margin: 0 0 0.3rem; }
+  .intro { color: var(--tinta-2); margin: 0 0 1rem; }
+  .tira { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin-bottom: 1rem; }
+  .mes {
+    display: grid;
+    gap: 0.15rem;
+    justify-items: center;
+    align-content: start;
+    padding: 0.5rem 0.2rem 0.45rem;
+    border: 1px solid var(--linea);
+    border-bottom-width: 4px;
+    border-radius: 4px;
+    background: var(--papel);
+    color: var(--tinta);
+    font: inherit;
+    cursor: pointer;
+    min-height: 5.2rem;
+    text-align: center;
+  }
+  .mes .c { font-family: var(--f-dato); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .mes .tt { font-family: var(--f-titulo); font-weight: 600; font-size: 0.92rem; line-height: 1.05; overflow-wrap: anywhere; }
+  .mes .i { font-family: var(--f-dato); font-size: 0.68rem; color: var(--tinta-2); }
+  .mes.con-evento .tt { color: var(--cerro); }
+  .mes.g-alta { border-bottom-color: var(--cerro); }
+  .mes.g-media { border-bottom-color: var(--arena); }
+  .mes.g-baja { border-bottom-color: var(--glaciar); }
+  .mes[aria-selected='true'] { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+  .mes[aria-selected='true'] .tt, .mes[aria-selected='true'] .i { color: var(--papel); }
+  .panel { border-left: 4px solid var(--celeste); padding: 0.3rem 0 0.3rem 1.1rem; max-width: 46rem; }
+  .panel h3 { font-size: 1.8rem; margin: 0.1rem 0 0.5rem; }
+  .texto { font-size: 1.1rem; line-height: 1.5; margin: 0 0 0.8rem; }
+  .datos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+  .datos li { display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.3rem; color: var(--tinta-2); }
+  .datos li.g-alta strong { color: var(--cerro); }
+  .datos li.g-baja strong { color: var(--glaciar); }
+  .leyenda { font-family: var(--f-dato); font-size: 0.72rem; color: var(--tinta-2); display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 1rem; }
+  .leyenda .p { display: inline-block; width: 14px; height: 4px; margin-left: 0.5rem; }
+  .p.g-alta { background: var(--cerro); }
+  .p.g-media { background: var(--arena); }
+  .p.g-baja { background: var(--glaciar); }
+  .mas { margin-top: 1.4rem; }
+  .mas summary { cursor: pointer; font-family: var(--f-dato); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; min-height: 44px; display: flex; align-items: center; }
+  .mas :global(.temporada), .mas :global(.clima) { margin-top: 1.5rem; }
+  .mas :global(.envoltura) { padding-inline: 0; }
+  @media (max-width: 52rem) {
+    .tira { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+</style>

@@ -1,0 +1,266 @@
+[
+ {
+  "slug": "jujuy",
+  "nombre": "Jujuy",
+  "region": "Norte",
+  "texto": {
+   "es": "Quebradas de colores, la Puna con sus salinas y las yungas húmedas, en una sola provincia. La Quebrada de Humahuaca es Patrimonio de la Humanidad.",
+   "pt": "Cânions coloridos, a Puna com suas salinas e as yungas úmidas, numa só província. A Quebrada de Humahuaca é Patrimônio da Humanidade.",
+   "en": "Colorful canyons, the high Puna with its salt flats and humid cloud forests, all in one province. The Quebrada de Humahuaca is a World Heritage Site."
+  },
+  "portada": "Quebrada de Humahuaca"
+ },
+ {
+  "slug": "salta",
+  "nombre": "Salta",
+  "region": "Norte",
+  "texto": {
+   "es": "Una capital colonial, los Valles Calchaquíes con sus vinos de altura y la Ruta 40 cruzando pueblos de adobe.",
+   "pt": "Uma capital colonial, os Vales Calchaquíes com seus vinhos de altitude e a Ruta 40 cruzando povoados de adobe.",
+   "en": "A colonial capital, the Calchaquí Valleys with their high-altitude wines and Route 40 winding through adobe villages."
+  },
+  "portada": "Parque Nacional Los Cardones"
+ },
+ {
+  "slug": "tucuman",
+  "nombre": "Tucumán",
+  "region": "Norte",
+  "texto": {
+   "es": "La provincia más chica del país: selva de montaña, los valles de Tafí y la casa donde se declaró la Independencia.",
+   "pt": "A menor província do país: floresta de montanha, os vales de Tafí e a casa onde foi declarada a Independência.",
+   "en": "The country's smallest province: mountain forest, the Tafí valleys and the house where Argentina declared independence."
+  },
+  "portada": "Tafí del Valle"
+ },
+ {
+  "slug": "catamarca",
+  "nombre": "Catamarca",
+  "region": "Norte",
+  "texto": {
+   "es": "Volcanes de la Puna, el Paso de San Francisco y la Ruta de los Seismiles, con algunas de las montañas más altas de América.",
+   "pt": "Vulcões da Puna, o Paso de San Francisco e a Rota dos Seismiles, com algumas das montanhas mais altas da América.",
+   "en": "Puna volcanoes, the San Francisco Pass and the Route of the Six-Thousanders, with some of the highest peaks in the Americas."
+  },
+  "portada": "Campo de Piedra Pómez"
+ },
+ {
+  "slug": "santiago-del-estero",
+  "nombre": "Santiago del Estero",
+  "region": "Norte",
+  "texto": {
+   "es": "La ciudad más antigua del país, chacarera y las aguas termales de Río Hondo.",
+   "pt": "A cidade mais antiga do país, chacarera e as águas termais de Río Hondo.",
+   "en": "The country's oldest city, chacarera folk music and the hot springs of Río Hondo."
+  },
+  "portada": "Termas de Río Hondo"
+ },
+ {
+  "slug": "la-rioja",
+  "nombre": "La Rioja",
+  "region": "Cuyo",
+  "texto": {
+   "es": "Los cañones rojos de Talampaya, Patrimonio de la Humanidad, y viñedos de torrontés riojano al pie del Famatina.",
+   "pt": "Os cânions vermelhos de Talampaya, Patrimônio da Humanidade, e vinhedos de torrontés riojano ao pé do Famatina.",
+   "en": "The red canyons of Talampaya, a World Heritage Site, and Torrontés vineyards at the foot of the Famatina range."
+  },
+  "portada": "Talampaya"
+ },
+ {
+  "slug": "san-juan",
+  "nombre": "San Juan",
+  "region": "Cuyo",
+  "texto": {
+   "es": "Ischigualasto, el Valle de la Luna, con fósiles de los primeros dinosaurios, y cielos entre los más limpios del mundo para mirar estrellas.",
+   "pt": "Ischigualasto, o Vale da Lua, com fósseis dos primeiros dinossauros, e céus entre os mais limpos do mundo para ver estrelas.",
+   "en": "Ischigualasto, the Valley of the Moon, with fossils of the earliest dinosaurs, and some of the clearest skies on Earth for stargazing."
+  },
+  "portada": "Ischigualasto (Valle de la Luna)"
+ },
+ {
+  "slug": "mendoza",
+  "nombre": "Mendoza",
+  "region": "Cuyo",
+  "texto": {
+   "es": "La capital del vino argentino, el Aconcagua y centros de esquí a pocas horas de la ciudad.",
+   "pt": "A capital do vinho argentino, o Aconcágua e centros de esqui a poucas horas da cidade.",
+   "en": "The capital of Argentine wine, Aconcagua and ski resorts a few hours from the city."
+  },
+  "portada": "Aconcagua"
+ },
+ {
+  "slug": "san-luis",
+  "nombre": "San Luis",
+  "region": "Cuyo",
+  "texto": {
+   "es": "Sierras con microclima en Merlo, diques para el agua y el Parque Nacional Sierra de las Quijadas.",
+   "pt": "Serras com microclima em Merlo, represas para esportes aquáticos e o Parque Nacional Sierra de las Quijadas.",
+   "en": "Hills with a mild microclimate in Merlo, reservoirs for water sports and Sierra de las Quijadas National Park."
+  },
+  "portada": "Parque Nacional Sierra de las Quijadas"
+ },
+ {
+  "slug": "misiones",
+  "nombre": "Misiones",
+  "region": "Litoral",
+  "texto": {
+   "es": "Las Cataratas del Iguazú, la selva paranaense, la tierra roja y las ruinas jesuíticas de San Ignacio.",
+   "pt": "As Cataratas do Iguaçu, a mata atlântica, a terra vermelha e as ruínas jesuíticas de San Ignacio.",
+   "en": "Iguazú Falls, the Atlantic rainforest, red earth and the Jesuit ruins of San Ignacio."
+  },
+  "portada": "Puerto Iguazú"
+ },
+ {
+  "slug": "corrientes",
+  "nombre": "Corrientes",
+  "region": "Litoral",
+  "texto": {
+   "es": "Los Esteros del Iberá, uno de los humedales más grandes del mundo, con yacarés, carpinchos y ciervos de los pantanos.",
+   "pt": "Os Esteros del Iberá, uma das maiores áreas úmidas do mundo, com jacarés, capivaras e cervos-do-pantanal.",
+   "en": "The Iberá Wetlands, one of the largest in the world, home to caimans, capybaras and marsh deer."
+  },
+  "portada": "Esteros del Iberá"
+ },
+ {
+  "slug": "entre-rios",
+  "nombre": "Entre Ríos",
+  "region": "Litoral",
+  "texto": {
+   "es": "Termas, playas de río sobre el Uruguay y el carnaval de Gualeguaychú.",
+   "pt": "Termas, praias de rio no Uruguai e o carnaval de Gualeguaychú.",
+   "en": "Hot springs, river beaches on the Uruguay and the Gualeguaychú carnival."
+  },
+  "portada": "Parque Nacional El Palmar"
+ },
+ {
+  "slug": "santa-fe",
+  "nombre": "Santa Fe",
+  "region": "Litoral",
+  "texto": {
+   "es": "Rosario y su costanera sobre el Paraná, las islas del delta y la cuna de la bandera.",
+   "pt": "Rosário e sua orla sobre o Paraná, as ilhas do delta e o berço da bandeira argentina.",
+   "en": "Rosario and its riverfront on the Paraná, the delta islands and the birthplace of the Argentine flag."
+  },
+  "portada": "Ciudad de Santa Fe"
+ },
+ {
+  "slug": "chaco",
+  "nombre": "Chaco",
+  "region": "Litoral",
+  "texto": {
+   "es": "Resistencia, la ciudad de las esculturas, y el Impenetrable, uno de los últimos grandes bosques nativos del país.",
+   "pt": "Resistencia, a cidade das esculturas, e o Impenetrable, uma das últimas grandes florestas nativas do país.",
+   "en": "Resistencia, the city of sculptures, and El Impenetrable, one of the country's last great native forests."
+  },
+  "portada": "Parque Nacional Chaco"
+ },
+ {
+  "slug": "formosa",
+  "nombre": "Formosa",
+  "region": "Litoral",
+  "texto": {
+   "es": "El Bañado La Estrella, un humedal enorme y poco conocido, ideal para observar aves.",
+   "pt": "O Bañado La Estrella, uma área úmida enorme e pouco conhecida, ideal para observar aves.",
+   "en": "Bañado La Estrella, a vast and little-known wetland, ideal for birdwatching."
+  },
+  "portada": "Bañado La Estrella"
+ },
+ {
+  "slug": "cordoba",
+  "nombre": "Córdoba",
+  "region": "Centro",
+  "texto": {
+   "es": "Sierras, ríos de montaña y pueblos de veraneo, más la Manzana Jesuítica, Patrimonio de la Humanidad.",
+   "pt": "Serras, rios de montanha e cidadezinhas de veraneio, além do Quarteirão Jesuítico, Patrimônio da Humanidade.",
+   "en": "Hills, mountain rivers and summer towns, plus the Jesuit Block, a World Heritage Site."
+  },
+  "portada": "La Falda"
+ },
+ {
+  "slug": "ciudad-de-buenos-aires",
+  "nombre": "Ciudad de Buenos Aires",
+  "region": "Buenos Aires",
+  "texto": {
+   "es": "Tango, teatros, barrios con identidad propia y la ciudad que más viajeros recibe del país, todo el año.",
+   "pt": "Tango, teatros, bairros com identidade própria e a cidade que mais recebe viajantes no país, o ano todo.",
+   "en": "Tango, theaters, neighborhoods with their own character, and the city that welcomes the most travelers in the country, all year round."
+  },
+  "portada": "Caminito y La Boca"
+ },
+ {
+  "slug": "buenos-aires",
+  "nombre": "Buenos Aires",
+  "region": "Buenos Aires",
+  "texto": {
+   "es": "Más de mil kilómetros de costa atlántica, las sierras de Tandil y pueblos de campo.",
+   "pt": "Mais de mil quilômetros de costa atlântica, as serras de Tandil e cidadezinhas do campo.",
+   "en": "Over a thousand kilometers of Atlantic coast, the Tandil hills and countryside towns."
+  },
+  "portada": "Tandil"
+ },
+ {
+  "slug": "la-pampa",
+  "nombre": "La Pampa",
+  "region": "Patagonia",
+  "texto": {
+   "es": "Llanura, caldenes y el Parque Nacional Lihué Calel, entre la pampa húmeda y la Patagonia.",
+   "pt": "Planície, caldenes e o Parque Nacional Lihué Calel, entre o pampa úmido e a Patagônia.",
+   "en": "Plains, caldén forests and Lihué Calel National Park, between the humid pampas and Patagonia."
+  },
+  "portada": "Parque Nacional Lihué Calel"
+ },
+ {
+  "slug": "neuquen",
+  "nombre": "Neuquén",
+  "region": "Patagonia",
+  "texto": {
+   "es": "Lagos y volcanes cordilleranos, la Ruta de los Siete Lagos y huellas de dinosaurios en la estepa.",
+   "pt": "Lagos e vulcões da cordilheira, a Rota dos Sete Lagos e pegadas de dinossauros na estepe.",
+   "en": "Andean lakes and volcanoes, the Seven Lakes Route and dinosaur tracks across the steppe."
+  },
+  "portada": "Volcán Lanín"
+ },
+ {
+  "slug": "rio-negro",
+  "nombre": "Río Negro",
+  "region": "Patagonia",
+  "texto": {
+   "es": "De la cordillera al mar: Bariloche y sus lagos, el Alto Valle y las playas de aguas cálidas de Las Grutas.",
+   "pt": "Da cordilheira ao mar: Bariloche e seus lagos, o Alto Valle e as praias de águas mornas de Las Grutas.",
+   "en": "From the Andes to the sea: Bariloche and its lakes, the Alto Valle and the warm-water beaches of Las Grutas."
+  },
+  "portada": "San Carlos de Bariloche"
+ },
+ {
+  "slug": "chubut",
+  "nombre": "Chubut",
+  "region": "Patagonia",
+  "texto": {
+   "es": "Ballenas en Península Valdés, pingüinos en Punta Tombo, pueblos galeses y bosques cordilleranos.",
+   "pt": "Baleias na Península Valdés, pinguins em Punta Tombo, vilas galesas e bosques da cordilheira.",
+   "en": "Whales at Península Valdés, penguins at Punta Tombo, Welsh villages and Andean forests."
+  },
+  "portada": "Punta Tombo"
+ },
+ {
+  "slug": "santa-cruz",
+  "nombre": "Santa Cruz",
+  "region": "Patagonia",
+  "texto": {
+   "es": "Los glaciares, el Fitz Roy y la estepa más inmensa del país.",
+   "pt": "As geleiras, o Fitz Roy e a estepe mais imensa do país.",
+   "en": "The glaciers, Mount Fitz Roy and the country's vastest steppe."
+  },
+  "portada": "El Calafate"
+ },
+ {
+  "slug": "tierra-del-fuego",
+  "nombre": "Tierra del Fuego",
+  "region": "Patagonia",
+  "texto": {
+   "es": "Ushuaia, el canal Beagle, las Islas Malvinas y la puerta de entrada a la Antártida.",
+   "pt": "Ushuaia, o canal Beagle, as Ilhas Malvinas e a porta de entrada para a Antártida.",
+   "en": "Ushuaia, the Beagle Channel, the Malvinas Islands and the gateway to Antarctica."
+  },
+  "portada": "Canal Beagle y Faro Les Eclaireurs"
+ }
+]

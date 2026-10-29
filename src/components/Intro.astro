@@ -1,0 +1,581 @@
+---
+// Portada animada: la cordillera entre nubes y, al bajar, la foto se desarma en puntos
+// que forman el mapa de la Argentina. Todo con Canvas 2D y sin librerías, pensado para
+// celulares de gama media. Con "reducir movimiento" se ve la foto fija con el título.
+import { geoAzimuthalEqualArea, geoCentroid, geoContains, geoTransverseMercator } from 'd3-geo';
+import antartidaRaw from '../data/antartida.geojson?raw';
+import provincias from '../data/provincias.geojson?raw';
+import lugares from '../data/lugares.json';
+import portadaMeses from '../data/portada.json';
+import { destinos } from '../data/destinos';
+import { foto, TAMANOS } from '../lib/fotos';
+import { mesesLargos, t as textos, tr, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const x = textos(lang).inicio;
+const MESES_LARGOS = mesesLargos(lang);
+
+const fondo = foto('Fitz Roy El Chalten sunrise-17.jpg', 1280);
+
+// Puntos de destino del mapa: una grilla dentro del país, calculada al compilar.
+const geo = JSON.parse(provincias);
+const proy = geoTransverseMercator().rotate([65, 0]).fitSize([1000, 2100], geo);
+const grilla: number[] = [];
+for (let lat = -21.8; lat > -55.2; lat -= 0.42) {
+  for (let lon = -73.6; lon < -53.5; lon += 0.42 / Math.cos((lat * Math.PI) / 180)) {
+    if (geo.features.some((f: any) => geoContains(f, [lon, lat]))) {
+      const [px, py] = proy([lon, lat])!;
+      grilla.push(Math.round(px), Math.round(py));
+    }
+  }
+}
+// Islas Malvinas: grilla más fina, para que se reconozca su forma.
+const tdf = geo.features.find((f: any) => String(f.properties.nombre).startsWith('Tierra del Fuego'));
+for (let lat = -50.9; lat > -52.5; lat -= 0.12) {
+  for (let lon = -61.6; lon < -57.6; lon += 0.12 / Math.cos((lat * Math.PI) / 180)) {
+    if (tdf && geoContains(tdf, [lon, lat])) {
+      const [px, py] = proy([lon, lat])!;
+      grilla.push(Math.round(px), Math.round(py));
+    }
+  }
+}
+// La Antártida Argentina y las Islas del Atlántico Sur también se forman con puntos,
+// en un recuadro abajo a la derecha, como en el mapa oficial.
+const antartida = JSON.parse(antartidaRaw);
+const sector = { type: 'LineString', coordinates: [[-74, -60], [-74, -90], [-25, -90], [-25, -60]] };
+const proyAnt = geoAzimuthalEqualArea()
+  .rotate([50, 90])
+  .fitExtent([[700, 1560], [980, 2070]], {
+    type: 'FeatureCollection',
+    features: [...antartida.features, { type: 'Feature', geometry: sector, properties: {} }],
+  });
+// Cada parte (península, islas) con su propia grilla; las islas chicas que no alcanzan
+// ni un punto de la grilla llevan uno en su centro.
+for (const f of antartida.features) {
+  for (const poly of f.geometry.coordinates) {
+    const parte = { type: 'Polygon', coordinates: poly } as any;
+    const xs: number[] = [], ys: number[] = [];
+    for (const c of poly[0]) {
+      const q = proyAnt(c as [number, number]);
+      if (q) { xs.push(q[0]); ys.push(q[1]); }
+    }
+    let alguno = false;
+    for (let py = Math.ceil(Math.min(...ys) / 10) * 10; py <= Math.max(...ys); py += 10) {
+      for (let px = Math.ceil(Math.min(...xs) / 10) * 10; px <= Math.max(...xs); px += 10) {
+        const ll = proyAnt.invert!([px, py]);
+        if (ll && geoContains(parte, ll)) { grilla.push(px, py); alguno = true; }
+      }
+    }
+    if (!alguno) {
+      const [px, py] = proyAnt(geoCentroid(parte))!;
+      if (px >= 700 && px <= 980 && py >= 1560 && py <= 2070) grilla.push(Math.round(px), Math.round(py));
+    }
+  }
+}
+// El borde del sector antártico, también en puntos.
+for (let i = 0; i <= 30; i += 2) {
+  for (const [lon, lat] of [[-74, -60 - i], [-25, -60 - i]]) {
+    const [px, py] = proyAnt([lon, lat])!;
+    grilla.push(Math.round(px), Math.round(py));
+  }
+}
+
+const destacados = lugares.filter((l: any) => !l.soloProvincia).flatMap((l) => {
+  const [px, py] = proy([l.lon, l.lat])!;
+  return [Math.round(px), Math.round(py)];
+});
+const datosPuntos = JSON.stringify({ ancho: 1000, alto: 2100, grilla, destacados });
+
+const opciones = portadaMeses.map((p) => {
+  const d = destinos.find((y) => y.id === p.destino)!;
+  return { href: url(lang, `${d.id}/`), t: `${x.esteMes(MESES_LARGOS[p.mes])} · ${tr(d.nombre, lang)}` };
+});
+import { rayosSol, DISCO_SOL } from '../lib/sol';
+---
+<section class="intro" data-intro aria-labelledby="titulo-intro">
+  <div class="escenario">
+    <img
+      class="foto"
+      src={fondo.src}
+      srcset={fondo.srcset}
+      sizes={TAMANOS.pantalla}
+      alt={x.altIntro}
+      fetchpriority="high"
+    />
+    <canvas class="nubes" aria-hidden="true"></canvas>
+    <div class="velo" aria-hidden="true"></div>
+    <canvas class="puntos" aria-hidden="true"></canvas>
+
+    <div class="texto">
+      <div class="envoltura">
+        <p class="etiqueta sobre">{x.etiqueta(destinos.length)}</p>
+        <h1 id="titulo-intro"><svg class="sol-titulo" viewBox="-100 -100 200 200" width="1" height="1" fill="#f6b40e" aria-hidden="true"><path d={rayosSol} /><circle r={DISCO_SOL} /></svg>{x.h1[0]}<br /><span>{x.h1[1]}</span></h1>
+        <p class="bajada">{x.bajada}</p>
+        <div class="acciones">
+          <a class="boton" href="#mapa">{x.boton}</a>
+          <a class="este-mes" data-este-mes href={opciones[0].href}>{opciones[0].t} <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+
+    <p class="final" aria-hidden="true">{x.final}</p>
+    <p class="seguir" aria-hidden="true"><span>↓</span> {x.deslizar}</p>
+    <span class="credito-intro">{textos(lang).foto}: <a href={fondo.pagina}>{fondo.autor ?? 'Wikimedia Commons'}</a>{fondo.licencia && ` · ${fondo.licencia}`}</span>
+  </div>
+  <script type="application/json" data-puntos set:html={datosPuntos} />
+  <script type="application/json" data-meses set:html={JSON.stringify(opciones)} />
+</section>
+
+<script>
+  const raiz = document.querySelector<HTMLElement>('[data-intro]');
+  if (raiz) iniciar(raiz);
+
+  function iniciar(raiz: HTMLElement) {
+    // Link "En <mes> · <destino>" según el mes actual.
+    try {
+      const meses = JSON.parse(raiz.querySelector('[data-meses]')!.textContent || '[]');
+      const m = meses[new Date().getMonth()];
+      const a = raiz.querySelector<HTMLAnchorElement>('[data-este-mes]');
+      if (m && a) {
+        a.href = m.href;
+        a.firstChild!.textContent = `${m.t} `;
+      }
+    } catch {}
+
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (quieto.matches) {
+      raiz.classList.add('quieta');
+      return;
+    }
+    raiz.classList.add('animada');
+
+    const escenario = raiz.querySelector<HTMLElement>('.escenario')!;
+    const cvNubes = raiz.querySelector<HTMLCanvasElement>('.nubes')!;
+    const cvPuntos = raiz.querySelector<HTMLCanvasElement>('.puntos')!;
+    const cn = cvNubes.getContext('2d')!;
+    const cp = cvPuntos.getContext('2d')!;
+    const D = JSON.parse(raiz.querySelector('[data-puntos]')!.textContent || '{}') as {
+      ancho: number;
+      alto: number;
+      grilla: number[];
+      destacados: number[];
+    };
+
+    // ---------- Nubes: ruido fractal que se repite en horizontal, generado una sola vez ----------
+    function texturaNubes(w: number, h: number, semilla: number) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const g = c.getContext('2d')!;
+      const img = g.createImageData(w, h);
+      const azar = (i: number, j: number, s: number) => {
+        const n = Math.sin(i * 127.1 + j * 311.7 + s * 74.7) * 43758.5453;
+        return n - Math.floor(n);
+      };
+      const ruido = (x: number, y: number, periodo: number, s: number) => {
+        const x0 = Math.floor(x), y0 = Math.floor(y);
+        const fx = x - x0, fy = y - y0;
+        const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+        const a = azar(x0 % periodo, y0, s), b = azar((x0 + 1) % periodo, y0, s);
+        const c2 = azar(x0 % periodo, y0 + 1, s), d = azar((x0 + 1) % periodo, y0 + 1, s);
+        return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d) * u * v;
+      };
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let n = 0, amp = 0.5, f = 1;
+          for (let o = 0; o < 5; o++) {
+            const per = 4 * f;
+            n += amp * ruido((x / w) * per, (y / h) * 4 * f, per, semilla + o);
+            amp *= 0.5;
+            f *= 2;
+          }
+          // Bordes de arriba y de abajo esfumados, para que la capa no se vea como una franja.
+          const borde = Math.sin((Math.PI * (y + 0.5)) / h);
+          const alfa = Math.max(0, Math.min(1, (n - 0.42) / 0.33)) * borde;
+          const k = (y * w + x) * 4;
+          img.data[k] = 255;
+          img.data[k + 1] = 255;
+          img.data[k + 2] = 255;
+          img.data[k + 3] = Math.round(alfa * alfa * 255);
+        }
+      }
+      g.putImageData(img, 0, 0);
+      return c;
+    }
+    const capas = [
+      { tex: texturaNubes(256, 96, 1), vel: 9, y: 0.42, alto: 0.75, alfa: 0.75 },
+      { tex: texturaNubes(256, 96, 7), vel: 16, y: 0.55, alto: 0.6, alfa: 0.9 },
+    ];
+
+    // ---------- Partículas: de la foto al mapa ----------
+    type P = { x0: number; y0: number; tx: number; ty: number; r: number; d: number; dest: boolean };
+    let parts: P[] = [];
+    let W = 0, H = 0, dpr = 1;
+    // Lugar del Sol de Mayo: en el Atlántico, entre la Patagonia y el recuadro antártico.
+    let sol = { x: 0, y: 0, r: 0 };
+
+    function medir() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = escenario.clientWidth;
+      H = escenario.clientHeight;
+      for (const c of [cvNubes, cvPuntos]) {
+        c.width = Math.round(W * dpr);
+        c.height = Math.round(H * dpr);
+      }
+      cn.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cp.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // El mapa ocupa el 78 % del alto, centrado.
+      const escala = Math.min((H * 0.78) / D.alto, (W * 0.86) / D.ancho);
+      const ox = (W - D.ancho * escala) / 2, oy = (H - D.alto * escala) / 2 + H * 0.02;
+      sol = { x: ox + 770 * escala, y: oy + 1290 * escala, r: 175 * escala };
+      const nuevo: P[] = [];
+      const sem = (i: number) => {
+        const n = Math.sin(i * 12.9898) * 43758.5453;
+        return n - Math.floor(n);
+      };
+      for (let i = 0; i < D.grilla.length; i += 2) {
+        const k = i / 2;
+        nuevo.push({
+          x0: sem(k) * W,
+          y0: sem(k + 999) * H,
+          tx: ox + D.grilla[i] * escala,
+          ty: oy + D.grilla[i + 1] * escala,
+          r: 1.1 + sem(k + 3) * 0.6,
+          d: sem(k + 7) * 0.35,
+          dest: false,
+        });
+      }
+      for (let i = 0; i < D.destacados.length; i += 2) {
+        const k = 5000 + i;
+        nuevo.push({
+          x0: sem(k) * W,
+          y0: sem(k + 999) * H,
+          tx: ox + D.destacados[i] * escala,
+          ty: oy + D.destacados[i + 1] * escala,
+          r: 3.2,
+          d: 0.35 + sem(k + 7) * 0.15,
+          dest: true,
+        });
+      }
+      parts = nuevo;
+    }
+
+    const suave = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+    const tramo = (p: number, a: number, b: number) => suave((p - a) / (b - a));
+    const css = getComputedStyle(document.documentElement);
+    const color = (v: string, def: string) => css.getPropertyValue(v).trim() || def;
+
+    let progreso = 0;
+    function leerScroll() {
+      const r = raiz.getBoundingClientRect();
+      const recorrido = r.height - window.innerHeight;
+      progreso = recorrido > 0 ? Math.min(1, Math.max(0, -r.top / recorrido)) : 0;
+    }
+
+    function dibujar(t: number) {
+      const p = progreso;
+      // Fases: 0–0.3 las nubes se espesan y se va el texto; 0.3–0.55 la foto se desarma;
+      // 0.45–0.9 los puntos viajan a su lugar en el mapa; 0.85–1 aparece la leyenda final.
+      const espesor = 0.35 + 0.65 * tramo(p, 0.05, 0.4) - 0.9 * tramo(p, 0.55, 0.85);
+      raiz.style.setProperty('--texto', String(1 - tramo(p, 0.02, 0.22)));
+      raiz.style.setProperty('--foto', String(1 - tramo(p, 0.3, 0.55)));
+      raiz.style.setProperty('--zoom', String(1 + 0.08 * tramo(p, 0, 0.5)));
+      raiz.style.setProperty('--velo', String(tramo(p, 0.4, 0.7)));
+      raiz.style.setProperty('--final', String(tramo(p, 0.85, 0.97)));
+
+      // Nubes
+      cn.clearRect(0, 0, W, H);
+      if (espesor > 0.01) {
+        for (const c of capas) {
+          const ancho = W * 2.2;
+          const alto = H * c.alto * (1 + 0.5 * tramo(p, 0.05, 0.4));
+          const desp = ((t / 1000) * c.vel) % ancho;
+          cn.globalAlpha = Math.min(1, c.alfa * espesor);
+          const y = H * c.y - alto / 2 - H * 0.15 * tramo(p, 0.05, 0.4);
+          cn.drawImage(c.tex, -desp, y, ancho, alto);
+          cn.drawImage(c.tex, -desp + ancho, y, ancho, alto);
+        }
+        cn.globalAlpha = 1;
+      }
+
+      // Puntos
+      cp.clearRect(0, 0, W, H);
+      const aparece = tramo(p, 0.28, 0.45);
+      const claro = tramo(p, 0.4, 0.7) > 0.5;
+      if (aparece > 0) {
+        const fin = tramo(p, 0.85, 1);
+        const base = color('--tinta-2', '#4b5b66');
+        const dest = color('--celeste', '#74acdf');
+        for (const q of parts) {
+          const k = tramo(p, 0.45 + q.d * 0.6, 0.72 + q.d * 0.6);
+          const x = q.x0 + (q.tx - q.x0) * k;
+          const y = q.y0 + (q.ty - q.y0) * k;
+          cp.globalAlpha = aparece * (q.dest ? 1 : 0.85);
+          // Durante el vuelo los puntos son blancos; al llegar toman el color del mapa.
+          // Sobre la foto los puntos son blancos; cuando el fondo se aclara, toman el color del mapa.
+          cp.fillStyle = !claro ? '#ffffff' : q.dest ? dest : base;
+          const r = q.dest ? q.r * (1 + 0.6 * fin) : q.r;
+          if (q.dest) {
+            cp.beginPath();
+            cp.arc(x, y, r, 0, Math.PI * 2);
+            cp.fill();
+          } else {
+            cp.fillRect(x - r / 2, y - r / 2, r, r);
+          }
+        }
+        cp.globalAlpha = 1;
+      }
+
+      // Al final, el Sol de Mayo de la bandera aparece y gira despacio.
+      const apareceSol = tramo(p, 0.86, 0.98);
+      if (apareceSol > 0) dibujarSol(cp, sol.x, sol.y, sol.r * (0.7 + 0.3 * apareceSol), apareceSol, t / 24000);
+    }
+
+    // Sol de Mayo simplificado: disco dorado con 32 rayos que alternan rectos y flamígeros.
+    function dibujarSol(g: CanvasRenderingContext2D, cx: number, cy: number, R: number, alfa: number, giro: number) {
+      const oro = '#f6b40e';
+      const borde = '#85340a';
+      const disco = R * 0.36;
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(giro);
+      g.globalAlpha = alfa;
+      g.fillStyle = oro;
+      g.strokeStyle = borde;
+      g.lineWidth = Math.max(0.6, R * 0.008);
+      for (let i = 0; i < 32; i++) {
+        const a = (i / 32) * Math.PI * 2;
+        g.save();
+        g.rotate(a);
+        g.beginPath();
+        if (i % 2 === 0) {
+          // Rayo recto
+          const w = R * 0.07;
+          g.moveTo(disco * 0.95, -w);
+          g.lineTo(R, 0);
+          g.lineTo(disco * 0.95, w);
+        } else {
+          // Rayo flamígero (ondulado)
+          const largo = R * 0.86, w = R * 0.05, n = 3;
+          g.moveTo(disco * 0.95, -w);
+          for (let k = 1; k <= 12; k++) {
+            const u = k / 12;
+            const x = disco * 0.95 + (largo - disco * 0.95) * u;
+            g.lineTo(x, -w * (1 - u) + Math.sin(u * Math.PI * n) * w * 0.9);
+          }
+          for (let k = 12; k >= 0; k--) {
+            const u = k / 12;
+            const x = disco * 0.95 + (largo - disco * 0.95) * u;
+            g.lineTo(x, w * (1 - u) + Math.sin(u * Math.PI * n) * w * 0.9);
+          }
+        }
+        g.closePath();
+        g.fill();
+        g.stroke();
+        g.restore();
+      }
+      g.beginPath();
+      g.arc(0, 0, disco, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      g.restore();
+    }
+
+    let visible = true;
+    let pedido = 0;
+    function bucle(t: number) {
+      pedido = 0;
+      if (!visible) return;
+      leerScroll();
+      dibujar(t);
+      pedido = requestAnimationFrame(bucle);
+    }
+    function arrancar() {
+      if (!pedido && visible) pedido = requestAnimationFrame(bucle);
+    }
+
+    medir();
+    new ResizeObserver(() => {
+      medir();
+      arrancar();
+    }).observe(escenario);
+    new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting && !document.hidden;
+      arrancar();
+    }).observe(raiz);
+    document.addEventListener('visibilitychange', () => {
+      visible = !document.hidden;
+      arrancar();
+    });
+    arrancar();
+  }
+</script>
+
+<style>
+  .intro { position: relative; background: #1d2a30; }
+  .intro.animada { height: 300svh; background: var(--papel); }
+  .escenario {
+    position: relative;
+    height: min(92svh, 56rem);
+    min-height: 32rem;
+    overflow: hidden;
+    color: var(--sobre-foto);
+  }
+  .animada .escenario { position: sticky; top: 0; height: 100svh; }
+  .foto {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: var(--foto, 1);
+    transform: scale(var(--zoom, 1));
+    will-change: opacity, transform;
+    background: #1d2a30;
+  }
+  .nubes, .puntos { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .quieta .nubes, .quieta .puntos { display: none; }
+  .velo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, rgb(8 16 22 / 0.78) 0%, rgb(8 16 22 / 0.25) 45%, rgb(8 16 22 / 0) 75%);
+  }
+  /* Al formarse el mapa, el fondo pasa al color de la página. */
+  .velo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--papel);
+    opacity: var(--velo, 0);
+  }
+  .texto {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    padding-block: 0 5.2rem;
+    opacity: var(--texto, 1);
+    transform: translateY(calc((1 - var(--texto, 1)) * -2rem));
+  }
+  .quieta .texto { padding-block-end: 3rem; }
+  /* Sol de Mayo que asoma detrás del final de "Argentina," */
+  .texto h1 { position: relative; isolation: isolate; width: fit-content; }
+  .sol-titulo {
+    position: absolute;
+    z-index: -1;
+    width: 2.4em;
+    height: 2.4em;
+    right: -1.05em;
+    top: 50%;
+    margin-top: -1.2em;
+    fill: #f6b40e;
+    opacity: 0.38;
+    filter: drop-shadow(0 0 40px rgb(246 180 14 / 0.7));
+    animation: girar-sol 160s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes girar-sol { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .sol-titulo { animation: none; } }
+  .texto h1 {
+    font-size: clamp(3.4rem, 11vw, 8.5rem);
+    text-transform: uppercase;
+    line-height: 0.88;
+    margin-block: 0.6rem 1.8rem;
+  }
+  .texto h1 span { color: var(--celeste); }
+  /* El título aparece entre la niebla. */
+  .animada .texto .etiqueta, .animada .texto h1, .animada .texto .bajada, .animada .acciones {
+    animation: niebla 1.6s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+  }
+  .animada .texto h1 { animation-delay: 0.15s; }
+  .animada .texto .bajada { animation-delay: 0.45s; }
+  .animada .acciones { animation-delay: 0.65s; }
+  @keyframes niebla {
+    from { opacity: 0; filter: blur(14px); transform: translateY(0.8rem); letter-spacing: 0.06em; }
+    to { opacity: 1; filter: blur(0); transform: none; }
+  }
+  .etiqueta.sobre { color: rgb(255 255 255 / 0.85); }
+  .bajada { max-width: 44ch; font-size: 1.15rem; margin: 0 0 1.5rem; color: rgb(255 255 255 / 0.92); }
+  .acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.4rem; }
+  .boton {
+    display: inline-block;
+    font-family: var(--f-dato);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0d161c;
+    background: #ffffff;
+    padding: 0.8rem 1.2rem;
+    text-decoration: none;
+    border-radius: 2px;
+  }
+  .boton:hover { background: var(--celeste); }
+  .este-mes {
+    font-family: var(--f-dato);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+    text-decoration: underline;
+    text-decoration-color: var(--celeste);
+    text-underline-offset: 0.3em;
+  }
+  .este-mes:hover { color: var(--celeste); }
+  .final {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(1.2rem, env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    text-align: center;
+    font-family: var(--f-titulo);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    text-transform: uppercase;
+    color: var(--tinta);
+    opacity: var(--final, 0);
+  }
+  .quieta .final, .quieta .seguir { display: none; }
+  .seguir {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1.6rem;
+    margin: 0;
+    z-index: 2;
+    text-align: center;
+    font-family: var(--f-dato);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.8);
+    opacity: var(--texto, 1);
+  }
+  .seguir span { display: inline-block; animation: bajar 1.8s ease-in-out infinite; }
+  @keyframes bajar { 50% { transform: translateY(4px); } }
+  .credito-intro {
+    position: absolute;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    top: 0.6rem;
+    z-index: 2;
+    font-family: var(--f-dato);
+    font-size: 0.66rem;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+    opacity: var(--texto, 1);
+  }
+  .credito-intro a { color: inherit; }
+  @media (max-width: 40rem) {
+    /* En celular el encabezado no queda fijo: al cargar, ocupa el borde de arriba y empuja
+       la escena hacia abajo, así que el texto se apoya un poco más arriba para quedar a la vista. */
+    .texto { padding-block-end: 9.5rem; }
+    .quieta .texto { padding-block-end: 3rem; }
+    .seguir { bottom: 6.8rem; }
+    .bajada { font-size: 1.05rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro.animada { height: auto; }
+  }
+</style>

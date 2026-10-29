@@ -1,0 +1,156 @@
+{
+  "bariloche": {
+    "verano": {
+      "es": "Lagos para nadar y navegar, caminatas a los refugios de montaña y días larguísimos.",
+      "pt": "Lagos para nadar e navegar, trilhas até os refúgios de montanha e dias muito longos.",
+      "en": "Lakes for swimming and boating, hikes to mountain huts and very long days."
+    },
+    "otono": {
+      "es": "Los bosques se tiñen de rojo y amarillo, y los caminos quedan casi para vos solo.",
+      "pt": "Os bosques ficam vermelhos e amarelos, e as estradas ficam quase só para você.",
+      "en": "The forests turn red and gold, and you have the roads almost to yourself."
+    },
+    "invierno": {
+      "es": "Temporada de esquí en el Cerro Catedral, uno de los centros de nieve más grandes de Sudamérica.",
+      "pt": "Temporada de esqui no Cerro Catedral, um dos maiores centros de neve da América do Sul.",
+      "en": "Ski season at Cerro Catedral, one of the largest ski areas in South America."
+    },
+    "primavera": {
+      "es": "El deshielo carga ríos y cascadas, y hacia fin de año florecen los lupinos al costado de la ruta.",
+      "pt": "O degelo enche rios e cachoeiras, e no fim do ano os tremoços florescem à beira da estrada.",
+      "en": "Snowmelt fills rivers and waterfalls, and by late spring lupines bloom along the roads."
+    }
+  },
+  "san-martin-de-los-andes": {
+    "verano": {
+      "es": "La Ruta de los Siete Lagos en su mejor momento, con playas y kayak en el lago Lácar.",
+      "pt": "A Rota dos Sete Lagos no seu melhor momento, com praias e caiaque no lago Lácar.",
+      "en": "The Seven Lakes Route at its best, with beaches and kayaking on Lake Lácar."
+    },
+    "otono": {
+      "es": "Colores de otoño en el Parque Nacional Lanín y lagos quietos como espejos.",
+      "pt": "Cores de outono no Parque Nacional Lanín e lagos parados como espelhos.",
+      "en": "Autumn colors in Lanín National Park and lakes as still as mirrors."
+    },
+    "invierno": {
+      "es": "Esquí y nieve en el Cerro Chapelco, a pocos minutos del pueblo.",
+      "pt": "Esqui e neve no Cerro Chapelco, a poucos minutos da cidade.",
+      "en": "Skiing and snow at Cerro Chapelco, a few minutes from town."
+    },
+    "primavera": {
+      "es": "Empieza la temporada de pesca deportiva y el volcán Lanín todavía conserva su nieve.",
+      "pt": "Começa a temporada de pesca esportiva e o vulcão Lanín ainda conserva sua neve.",
+      "en": "Fly-fishing season opens and Lanín volcano still keeps its snowcap."
+    }
+  },
+  "el-chalten": {
+    "verano": {
+      "es": "Días de más de 16 horas de luz y todos los senderos abiertos.",
+      "pt": "Dias com mais de 16 horas de luz e todas as trilhas abertas.",
+      "en": "Days with more than 16 hours of daylight and every trail open."
+    },
+    "otono": {
+      "es": "Las lengas se ponen rojas y doradas: muchos dicen que es la época más linda para caminar.",
+      "pt": "As lengas ficam vermelhas e douradas: muitos dizem que é a época mais bonita para caminhar.",
+      "en": "The lenga forests turn red and gold; many say it is the most beautiful time to hike."
+    },
+    "invierno": {
+      "es": "El pueblo descansa: muchos alojamientos cierran y los senderos se cubren de nieve.",
+      "pt": "O povoado descansa: muitas hospedagens fecham e as trilhas ficam cobertas de neve.",
+      "en": "The village rests: many lodgings close and the trails are covered in snow."
+    },
+    "primavera": {
+      "es": "Vuelve la temporada, con picos nevados, días cada vez más largos y viento patagónico.",
+      "pt": "A temporada volta, com picos nevados, dias cada vez mais longos e vento patagônico.",
+      "en": "The season returns, with snowy peaks, longer days and Patagonian wind."
+    }
+  },
+  "el-calafate": {
+    "verano": {
+      "es": "Todas las navegaciones funcionan y los días son larguísimos para ver el glaciar.",
+      "pt": "Todas as navegações funcionam e os dias são longuíssimos para ver a geleira.",
+      "en": "Every boat trip runs and the days are very long for glacier viewing."
+    },
+    "otono": {
+      "es": "Bosques de colores alrededor del lago y el Perito Moreno con mucha menos gente.",
+      "pt": "Bosques coloridos ao redor do lago e o Perito Moreno com muito menos gente.",
+      "en": "Colorful forests around the lake and Perito Moreno with far fewer people."
+    },
+    "invierno": {
+      "es": "Las pasarelas abren todo el año: el glaciar con nieve alrededor y casi sin visitantes.",
+      "pt": "As passarelas abrem o ano todo: a geleira com neve ao redor e quase sem visitantes.",
+      "en": "The walkways open all year: the glacier framed by snow and almost no visitors."
+    },
+    "primavera": {
+      "es": "Vuelven todas las excursiones y la estepa se llena de vida.",
+      "pt": "Voltam todos os passeios e a estepe se enche de vida.",
+      "en": "All excursions resume and the steppe comes back to life."
+    }
+  },
+  "ushuaia": {
+    "verano": {
+      "es": "Navegación por el canal Beagle, pingüinos en Isla Martillo y luz hasta muy tarde.",
+      "pt": "Navegação pelo canal Beagle, pinguins na Isla Martillo e luz até muito tarde.",
+      "en": "Beagle Channel cruises, penguins on Martillo Island and daylight until late."
+    },
+    "otono": {
+      "es": "El Parque Nacional Tierra del Fuego se pinta de rojos y amarillos.",
+      "pt": "O Parque Nacional Tierra del Fuego se pinta de vermelhos e amarelos.",
+      "en": "Tierra del Fuego National Park is painted in reds and yellows."
+    },
+    "invierno": {
+      "es": "Esquí en el Cerro Castor, trineos con perros y la Fiesta de la Noche Más Larga en junio.",
+      "pt": "Esqui no Cerro Castor, trenós puxados por cães e a Festa da Noite Mais Longa em junho.",
+      "en": "Skiing at Cerro Castor, dog sledding and the Longest Night Festival in June."
+    },
+    "primavera": {
+      "es": "Llegan los pingüinos a Isla Martillo y empiezan las navegaciones de la temporada.",
+      "pt": "Os pinguins chegam à Isla Martillo e começam as navegações da temporada.",
+      "en": "Penguins arrive on Martillo Island and the boat season begins."
+    }
+  },
+  "mendoza": {
+    "verano": {
+      "es": "Rafting en el río Mendoza y temporada de ascenso al Aconcagua.",
+      "pt": "Rafting no rio Mendoza e temporada de escalada ao Aconcágua.",
+      "en": "Rafting on the Mendoza River and Aconcagua climbing season."
+    },
+    "otono": {
+      "es": "Vendimia: la cosecha, la fiesta y después los viñedos dorados.",
+      "pt": "Vindima: a colheita, a festa e depois os vinhedos dourados.",
+      "en": "Harvest time: the grape harvest, its festival, then golden vineyards."
+    },
+    "invierno": {
+      "es": "Nieve en la cordillera y centros de esquí a pocas horas de la ciudad.",
+      "pt": "Neve na cordilheira e centros de esqui a poucas horas da cidade.",
+      "en": "Snow on the Andes and ski resorts a few hours from the city."
+    },
+    "primavera": {
+      "es": "Las viñas brotan y el clima templado invita a recorrer bodegas en bicicleta.",
+      "pt": "As videiras brotam e o clima ameno convida a percorrer vinícolas de bicicleta.",
+      "en": "The vines sprout and mild weather is perfect for cycling between wineries."
+    }
+  },
+  "puerto-madryn": {
+    "verano": {
+      "es": "Pingüinos con sus pichones en Punta Tombo y playas de agua fría y clara.",
+      "pt": "Pinguins com seus filhotes em Punta Tombo e praias de água fria e clara.",
+      "en": "Penguins with their chicks at Punta Tombo and beaches with cold, clear water."
+    },
+    "otono": {
+      "es": "Las orcas recorren las playas de Punta Norte buscando lobos marinos.",
+      "pt": "As orcas percorrem as praias de Punta Norte em busca de leões-marinhos.",
+      "en": "Orcas patrol the beaches of Punta Norte hunting for sea lions."
+    },
+    "invierno": {
+      "es": "Llegan las ballenas francas a los golfos: empieza la temporada de avistaje.",
+      "pt": "As baleias-francas chegam aos golfos: começa a temporada de avistamento.",
+      "en": "Southern right whales arrive in the gulfs: whale-watching season begins."
+    },
+    "primavera": {
+      "es": "El pico de las ballenas, elefantes marinos con sus crías y vuelven los pingüinos.",
+      "pt": "O pico das baleias, elefantes-marinhos com seus filhotes e a volta dos pinguins.",
+      "en": "Peak whale season, elephant seals with their pups and the penguins return."
+    }
+  }
+}

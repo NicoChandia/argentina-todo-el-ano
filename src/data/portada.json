@@ -1,0 +1,14 @@
+[
+  { "mes": 0, "destino": "el-calafate", "foto": "Perito Moreno Glacier South.jpg" },
+  { "mes": 1, "destino": "bariloche", "foto": "Llao Llao Peninsula.jpg" },
+  { "mes": 2, "destino": "mendoza", "foto": "Mendoza banner vineyards.jpg" },
+  { "mes": 3, "destino": "el-chalten", "foto": "Fitz Roy El Chalten sunrise-17.jpg" },
+  { "mes": 4, "destino": "cafayate", "foto": "Quebrada de las Conchas 04.jpg" },
+  { "mes": 5, "destino": "ushuaia", "foto": "Ushuaia (8089448221).jpg" },
+  { "mes": 6, "destino": "purmamarca", "foto": "Cerro de los siete colores.JPG" },
+  { "mes": 7, "destino": "mendoza", "foto": "Aconcagua2016.jpg" },
+  { "mes": 8, "destino": "puerto-madryn", "foto": "Peninsula Valdes, Argentinien (10283732376).jpg" },
+  { "mes": 9, "destino": "iguazu", "foto": "Iguazu National Park Falls.jpg" },
+  { "mes": 10, "destino": "san-martin-de-los-andes", "foto": "SAN MARTIN DE LOS ANDES LACAR.JPG" },
+  { "mes": 11, "destino": "mar-del-plata", "foto": "BalnearioAlfonsina-LaPerlaMDP-feb2017.jpg" }
+]

@@ -1,0 +1,19 @@
+[
+  {"id": 9, "nombre": "Puerto Iguazú", "rio": "Paraná", "lat": -25.5833, "lon": -54.5667, "alerta": 25, "evacuacion": 28, "provincia": "Misiones"},
+  {"id": 10, "nombre": "Libertad", "rio": "Paraná", "lat": -25.9167, "lon": -54.6211, "alerta": 29, "evacuacion": 31, "provincia": "Misiones"},
+  {"id": 13, "nombre": "Santa Ana", "rio": "Paraná", "lat": -27.3351, "lon": -55.5884, "alerta": 9.3, "evacuacion": 9.8, "provincia": "Misiones"},
+  {"id": 14, "nombre": "Posadas", "rio": "Paraná", "lat": -27.3667, "lon": -55.8833, "alerta": 11, "evacuacion": 12, "provincia": "Misiones"},
+  {"id": 18, "nombre": "Paso de la Patria", "rio": "Paraná", "lat": -27.3333, "lon": -58.5833, "alerta": 6.5, "evacuacion": 7, "provincia": "Corrientes"},
+  {"id": 19, "nombre": "Corrientes", "rio": "Paraná", "lat": -27.4636, "lon": -58.8389, "alerta": 6.5, "evacuacion": 7, "provincia": "Corrientes"},
+  {"id": 20, "nombre": "Barranqueras", "rio": "Paraná", "lat": -27.4833, "lon": -58.9333, "alerta": 6, "evacuacion": 6.5, "provincia": "Chaco"},
+  {"id": 29, "nombre": "Paraná", "rio": "Paraná", "lat": -31.7182, "lon": -60.5226, "alerta": 4.7, "evacuacion": 5, "provincia": "Entre Ríos"},
+  {"id": 30, "nombre": "Santa Fe", "rio": "Paraná", "lat": -31.6515, "lon": -60.7002, "alerta": 5.3, "evacuacion": 5.7, "provincia": "Santa Fe"},
+  {"id": 34, "nombre": "Rosario", "rio": "Paraná", "lat": -32.9433, "lon": -60.6308, "alerta": 5, "evacuacion": 5.25, "provincia": "Santa Fe"},
+  {"id": 49, "nombre": "Tigre", "rio": "Luján", "lat": -34.4159, "lon": -58.578, "alerta": 3.3, "evacuacion": 3.8, "provincia": "Buenos Aires"},
+  {"id": 57, "nombre": "Puerto Formosa", "rio": "Paraguay", "lat": -26.1833, "lon": -58.1833, "alerta": 7.8, "evacuacion": 8.3, "provincia": "Formosa"},
+  {"id": 71, "nombre": "Yapeyú", "rio": "Uruguay", "lat": -29.47, "lon": -56.8107, "alerta": 9.5, "evacuacion": 10.5, "provincia": "Corrientes"},
+  {"id": 76, "nombre": "Federación", "rio": "Uruguay", "lat": -30.9932, "lon": -57.9147, "alerta": 3.9, "evacuacion": 4.2, "provincia": "Entre Ríos"},
+  {"id": 80, "nombre": "Colón", "rio": "Uruguay", "lat": -32.2333, "lon": -58.1167, "alerta": 7.1, "evacuacion": 7.9, "provincia": "Entre Ríos"},
+  {"id": 85, "nombre": "Buenos Aires", "rio": "de la Plata", "lat": -34.5611, "lon": -58.3993, "alerta": 3.3, "evacuacion": 3.9, "provincia": "Ciudad de Buenos Aires"},
+  {"id": 99, "nombre": "Gualeguaychú", "rio": "Uruguay", "lat": -33.0144, "lon": -58.5042, "alerta": 3.5, "evacuacion": 3.8, "provincia": "Entre Ríos"}
+]

@@ -1,0 +1,42 @@
+{
+  "fuente": "https://www.argentina.gob.ar/tema/emergencias",
+  "numeros": [
+    {
+      "numero": "911",
+      "que": { "es": "Emergencias: policía y ambulancia", "pt": "Emergências: polícia e ambulância", "en": "Emergencies: police and ambulance" },
+      "nota": { "es": "Donde no responda, 101 (policía).", "pt": "Onde não atender, 101 (polícia).", "en": "Where it doesn't answer, dial 101 (police)." },
+      "principal": true
+    },
+    {
+      "numero": "107",
+      "que": { "es": "Emergencias médicas", "pt": "Emergências médicas", "en": "Medical emergencies" },
+      "nota": { "es": "Funciona en muchas ciudades; si no atiende, 911.", "pt": "Funciona em muitas cidades; se não atender, 911.", "en": "Works in many cities; if no answer, dial 911." },
+      "principal": true
+    },
+    {
+      "numero": "100",
+      "que": { "es": "Bomberos", "pt": "Bombeiros", "en": "Fire department" },
+      "principal": true
+    },
+    {
+      "numero": "103",
+      "que": { "es": "Defensa Civil: inundaciones, tormentas, derrumbes", "pt": "Defesa Civil: enchentes, tempestades, desabamentos", "en": "Civil Defense: floods, storms, landslides" }
+    },
+    {
+      "numero": "106",
+      "que": { "es": "Emergencias en ríos, lagos y mar (Prefectura)", "pt": "Emergências em rios, lagos e mar (Prefectura)", "en": "Emergencies on rivers, lakes and at sea (Coast Guard)" }
+    },
+    {
+      "numero": "105",
+      "que": { "es": "Emergencias ambientales", "pt": "Emergências ambientais", "en": "Environmental emergencies" }
+    },
+    {
+      "numero": "144",
+      "que": { "es": "Violencia de género, las 24 horas", "pt": "Violência de gênero, 24 horas", "en": "Gender-based violence, 24 hours" }
+    },
+    {
+      "numero": "135",
+      "que": { "es": "Asistencia en crisis emocional", "pt": "Apoio em crise emocional", "en": "Emotional crisis support" }
+    }
+  ]
+}

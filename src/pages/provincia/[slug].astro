@@ -1,0 +1,9 @@
+---
+import Provincia from '../../components/Provincia.astro';
+import info from '../../data/provincias-info.json';
+
+export function getStaticPaths() {
+  return info.map((p) => ({ params: { slug: p.slug } }));
+}
+---
+<Provincia lang="es" slug={Astro.params.slug!} />

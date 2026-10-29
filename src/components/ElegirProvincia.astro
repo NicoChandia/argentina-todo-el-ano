@@ -1,0 +1,49 @@
+---
+// Selector rápido: elegís una provincia y te lleva a su página.
+import info from '../data/provincias-info.json';
+import { t as textos, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  actual?: string;
+}
+const { lang, actual } = Astro.props;
+const x = textos(lang).provincia;
+const id = `elegir-${Math.random().toString(36).slice(2, 7)}`;
+const lista = [...info].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+---
+<div class="elegir">
+  <label for={id}>{x.elegi}</label>
+  <select id={id} data-ir-provincia>
+    <option value="" selected={!actual}>{x.elegi}…</option>
+    {lista.map((p) => (
+      <option value={url(lang, `provincia/${p.slug}/`)} selected={p.slug === actual}>{p.nombre}</option>
+    ))}
+  </select>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLSelectElement>('[data-ir-provincia]').forEach((s) => {
+    s.addEventListener('change', () => {
+      if (s.value) location.href = s.value;
+    });
+  });
+</script>
+
+<style>
+  .elegir { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; margin-block: 0.8rem; }
+  label { font-family: var(--f-dato); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-2); }
+  select {
+    font: inherit;
+    font-family: var(--f-titulo);
+    font-size: 1.15rem;
+    font-weight: 600;
+    min-height: 44px;
+    padding: 0.35rem 2.2rem 0.35rem 0.8rem;
+    border: 2px solid var(--celeste);
+    border-radius: 3px;
+    background: var(--papel);
+    color: var(--tinta);
+    max-width: 100%;
+  }
+</style>

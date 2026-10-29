@@ -1,0 +1,14 @@
+---
+import Ficha from '../../components/Ficha.astro';
+import { destinos } from '../../data/destinos';
+import { idiomaPorDefecto, idiomas, type Lang } from '../../i18n';
+
+export function getStaticPaths() {
+  return idiomas
+    .filter((l) => l !== idiomaPorDefecto)
+    .flatMap((lang) => destinos.map((d, i) => ({ params: { lang, id: d.id }, props: { i } })));
+}
+const lang = Astro.params.lang as Lang;
+const { i } = Astro.props as { i: number };
+---
+<Ficha lang={lang} i={i} />

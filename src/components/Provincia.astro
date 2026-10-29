@@ -1,0 +1,376 @@
+---
+// Página de una provincia: su mapa con todos sus lugares numerados y, debajo, cada lugar
+// con su temporada. Así el mapa del país queda liviano y el detalle vive acá.
+import { geoPath, geoTransverseMercator } from 'd3-geo';
+import Base from '../layouts/Base.astro';
+import provinciasRaw from '../data/provincias.geojson?raw';
+import lugares from '../data/lugares.json';
+import info from '../data/provincias-info.json';
+import datos from '../data/temporada.json';
+import { destinos } from '../data/destinos';
+import { foto, TAMANOS } from '../lib/fotos';
+import Avisos from './Avisos.astro';
+import Guia from './Guia.astro';
+import Credito from './Credito.astro';
+import ElegirProvincia from './ElegirProvincia.astro';
+import { archivoLugar, archivoProvincia } from '../lib/lugares';
+import {
+  listaMeses,
+  mesesCortos,
+  numero,
+  regiones,
+  t as textos,
+  tr,
+  url,
+  type Lang,
+} from '../i18n';
+
+interface Props {
+  lang: Lang;
+  slug: string;
+}
+const { lang, slug } = Astro.props;
+const x = textos(lang).provincia;
+const p = info.find((i) => i.slug === slug)!;
+const region = regiones[p.region][lang].nombre;
+
+// Geometría de la provincia (los nombres largos del IGN se acortan igual que en el mapa).
+const cortos: Record<string, string> = {
+  'Ciudad Autónoma de Buenos Aires': 'Ciudad de Buenos Aires',
+  'Tierra del Fuego, Antártida e Islas del Atlántico Sur': 'Tierra del Fuego',
+};
+const geo = JSON.parse(provinciasRaw);
+const feature = geo.features.find((f: any) => (cortos[f.properties.nombre] ?? f.properties.nombre) === p.nombre);
+// Para Tierra del Fuego el recorte incluye la Isla Grande y las Malvinas.
+const ANCHO = 600;
+const ALTO = 520;
+const proy = geoTransverseMercator()
+  .rotate([-(geoCentroLon(feature)), 0])
+  .fitExtent([[24, 24], [ANCHO - 24, ALTO - 24]], feature);
+const ruta = geoPath(proy);
+function geoCentroLon(f: any) {
+  const xs: number[] = [];
+  const recorrer = (c: any) => (typeof c[0] === 'number' ? xs.push(c[0]) : c.forEach(recorrer));
+  recorrer(f.geometry.coordinates);
+  return (Math.min(...xs) + Math.max(...xs)) / 2;
+}
+
+type Serie = { viajeros: Record<string, (number | null)[]>; inciertos: Record<string, number[]> };
+const series = (datos as unknown as { localidades: Record<string, Serie> }).localidades;
+
+const lista = lugares
+  .filter((l) => l.provincia === p.nombre)
+  .map((l: any) => {
+    const ficha = l.destino ? destinos.find((d) => d.id === l.destino) : null;
+    let meses: (number | null)[] | null = null;
+    if (l.localidadEOH && series[l.localidadEOH]) {
+      const s = series[l.localidadEOH].viajeros;
+      const anios = Object.keys(s);
+      meses = Array.from({ length: 12 }, (_, i) => {
+        const vs = anios.map((a) => s[a][i]).filter((v): v is number => typeof v === 'number');
+        return vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : null;
+      });
+    }
+    const validos = (meses ?? []).filter((v): v is number => v !== null);
+    const max = validos.length ? Math.max(...validos) : 0;
+    const orden = (meses ?? [])
+      .map((v, i) => ({ v, i }))
+      .filter((o): o is { v: number; i: number } => o.v !== null)
+      .sort((a, b) => a.v - b.v);
+    const [px, py] = proy([l.lon, l.lat]) ?? [0, 0];
+    const archivo = archivoLugar(l);
+    return {
+      ...l,
+      foto: archivo ? foto(archivo, 640) : null,
+      nombreMostrado: ficha ? tr(ficha.nombre, lang) : l.nombre,
+      ficha,
+      meses,
+      max,
+      total: validos.reduce((a, b) => a + b, 0),
+      calmos: orden.slice(0, 3).map((o) => o.i).sort((a, b) => a - b),
+      x: px,
+      y: py,
+    };
+  })
+  // Primero los lugares con ficha, después los medidos por viajeros, después el resto.
+  .sort((a, b) => Number(!!b.ficha) - Number(!!a.ficha) || b.total - a.total || a.nombre.localeCompare(b.nombre));
+
+// Marcadores numerados sin superponerse: si dos quedan muy cerca, se separan de a poco.
+const R = 11;
+const marcas = lista.map((l, i) => ({ n: i + 1, x: l.x, y: l.y, x0: l.x, y0: l.y, atr: !l.meses }));
+for (let paso = 0; paso < 80; paso++) {
+  let movio = false;
+  for (let i = 0; i < marcas.length; i++) {
+    for (let j = i + 1; j < marcas.length; j++) {
+      const a = marcas[i], b = marcas[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d = Math.hypot(dx, dy);
+      if (d < 2 * R + 3) {
+        if (d < 0.01) { dx = 1; dy = 0; d = 1; }
+        const empuje = (2 * R + 3 - d) / 2;
+        a.x -= (dx / d) * empuje; a.y -= (dy / d) * empuje;
+        b.x += (dx / d) * empuje; b.y += (dy / d) * empuje;
+        movio = true;
+      }
+    }
+  }
+  for (const m of marcas) {
+    m.x = Math.min(ANCHO - R - 2, Math.max(R + 2, m.x));
+    m.y = Math.min(ALTO - R - 2, Math.max(R + 2, m.y));
+  }
+  if (!movio) break;
+}
+
+const archivoPortada = archivoProvincia(p.slug);
+const fotoCabecera = archivoPortada ? foto(archivoPortada, 1920) : null;
+const creditos = [fotoCabecera, ...lista.map((l) => l.foto)].filter((f, i, a): f is NonNullable<typeof f> => !!f && a.findIndex((g) => g?.archivo === f.archivo) === i);
+const MESES = mesesCortos(lang);
+const otras = info.filter((i) => i.region === p.region && i.slug !== p.slug);
+---
+<Base
+  lang={lang}
+  ruta={`provincia/${p.slug}/`}
+  titulo={`${x.titulo(p.nombre)} | ${textos(lang).marca.join(' ')}`}
+  descripcion={`${tr(p.texto as any, lang)} ${x.descripcion(p.nombre)}`}
+  imagen={fotoCabecera?.src}
+>
+  <section class={`cabecera ${fotoCabecera ? 'con-foto' : ''}`}>
+    {fotoCabecera && (
+      <img class="portada" src={fotoCabecera.src} srcset={fotoCabecera.srcset} sizes={TAMANOS.pantalla} alt={`${p.nombre}: ${(p as any).portada ?? ''}`} fetchpriority="high" />
+    )}
+    <div class="envoltura cabecera-texto">
+      <p class="etiqueta"><a href={`${url(lang)}#provincias`}>{x.todas}</a> · {region}</p>
+      <h1>{p.nombre}</h1>
+      <p class="intro">{tr(p.texto as any, lang)}</p>
+      <p class="atajo"><a href="#preguntas">{textos(lang).guia.p.cuando} · {textos(lang).guia.p.emergencia} →</a></p>
+      {fotoCabecera && <Credito f={fotoCabecera} lang={lang} clase="sobre" />}
+    </div>
+  </section>
+
+  <div class="envoltura">
+    <Avisos lang={lang} provincia={p.nombre} />
+  </div>
+
+  <section class="envoltura cuerpo">
+    <figure class="mapa-prov">
+      <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} role="img" aria-label={x.mapaAria(p.nombre)}>
+        <path class="silueta" d={ruta(feature) ?? ''} />
+        {marcas.map((m) =>
+          Math.hypot(m.x - m.x0, m.y - m.y0) > 1 ? <line x1={m.x0} y1={m.y0} x2={m.x} y2={m.y} class="guia" /> : null,
+        )}
+        {marcas.map((m) => (
+          <a href={`#lugar-${m.n}`}>
+            <circle cx={m.x.toFixed(1)} cy={m.y.toFixed(1)} r={R} class={m.atr ? 'atr' : ''} />
+            <text x={m.x.toFixed(1)} y={(m.y + 4).toFixed(1)} text-anchor="middle">{m.n}</text>
+          </a>
+        ))}
+      </svg>
+      <figcaption>{x.leyendaMapa}</figcaption>
+    </figure>
+
+    <ol class="lugares">
+      {lista.map((l, i) => (
+        <li id={`lugar-${i + 1}`} class={l.ficha ? 'con-ficha' : ''}>
+          <span class="num" aria-hidden="true">{i + 1}</span>
+          {l.foto && (
+            <img class="mini-foto" src={l.foto.src} srcset={l.foto.srcset} sizes="(max-width: 40rem) 100vw, 26rem" alt={l.nombreMostrado} loading="lazy" />
+          )}
+          <div class="info">
+            <h2>{l.nombreMostrado}</h2>
+            {l.ficha && <p class="lema">{tr(l.ficha.lema, lang)}</p>}
+            {l.meses ? (
+              <>
+                <ol class="mini" aria-hidden="true">
+                  {l.meses.map((v: number | null, k: number) => {
+                    const r = v === null || !l.max ? null : v / l.max;
+                    return (
+                      <li
+                        data-mes={k}
+                        class={r === null ? 'n' : r >= 0.8 ? 'a' : r <= 0.55 ? 'b' : 'm'}
+                        style={`--h:${r ?? 0}`}
+                      >
+                        <span>{MESES[k].slice(0, 1)}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <p class="dato">{x.tranquilo(listaMeses(l.calmos, lang))} · {x.viajeros(numero(l.total, lang))}</p>
+              </>
+            ) : (
+              <p class="dato apagado">{x.sinMedicion}</p>
+            )}
+            {l.ficha && <a class="ir" href={url(lang, `${l.ficha.id}/`)}>{x.verFicha} →</a>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <Guia
+    lang={lang}
+    provincia={p.nombre}
+    region={region}
+    lugares={lista.map((l, i) => ({
+      n: i + 1,
+      nombre: l.nombreMostrado,
+      meses: l.meses,
+      fichaUrl: l.ficha ? url(lang, `${l.ficha.id}/`) : undefined,
+      lema: l.ficha ? tr(l.ficha.lema, lang) : undefined,
+    }))}
+    otras={otras.map((o) => ({ slug: o.slug, nombre: o.nombre }))}
+  />
+
+  {otras.length > 0 && (
+    <nav class="envoltura otras" aria-label={x.otras(region)}>
+      <h2>{x.otras(region)}</h2>
+      <ul>
+        {otras.map((o) => <li><a href={url(lang, `provincia/${o.slug}/`)}>{o.nombre}</a></li>)}
+      </ul>
+      <ElegirProvincia lang={lang} actual={p.slug} />
+    </nav>
+  )}
+
+  {creditos.length > 0 && (
+    <details class="envoltura creditos">
+      <summary>{x.fotos}</summary>
+      <ul>{creditos.map((f) => <li><Credito f={f} lang={lang} /></li>)}</ul>
+    </details>
+  )}
+</Base>
+
+<script>
+  // Marca el mes actual en las barritas de cada lugar.
+  const m = String(new Date().getMonth());
+  document.querySelectorAll<HTMLElement>(`.mini li[data-mes="${m}"]`).forEach((li) => li.classList.add('actual'));
+</script>
+
+<style>
+  .cabecera { padding-block: 3rem 1.5rem; }
+  .cabecera.con-foto {
+    position: relative;
+    min-height: min(78vh, 40rem);
+    display: flex;
+    align-items: flex-end;
+    padding-block: 6rem 1.4rem;
+    color: #fff;
+    isolation: isolate;
+  }
+  .cabecera .portada { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .cabecera.con-foto::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, rgb(5 15 22 / 0.88) 0%, rgb(5 15 22 / 0.45) 45%, rgb(5 15 22 / 0.05) 80%);
+  }
+  .cabecera-texto { width: 100%; }
+  .con-foto .etiqueta, .con-foto .etiqueta a, .con-foto .intro, .con-foto .atajo a { color: #fff; text-shadow: 0 1px 4px rgb(0 0 0 / 0.6); }
+  .con-foto .intro { color: rgb(255 255 255 / 0.92); }
+  .con-foto h1 { color: #fff; text-shadow: 0 2px 12px rgb(0 0 0 / 0.45); }
+  .cabecera :global(.credito) { display: block; margin-top: 0.8rem; }
+  .cabecera .etiqueta a { color: inherit; }
+  .cabecera h1 { font-size: clamp(3rem, 9vw, 6rem); text-transform: uppercase; margin-block: 0.4rem 0.8rem; }
+  .intro { font-size: 1.25rem; max-width: 48ch; margin: 0; color: var(--tinta-2); }
+  .atajo { margin: 0.9rem 0 0; font-family: var(--f-dato); font-size: 0.8rem; }
+
+  .cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+    margin-top: 2rem;
+  }
+  .mapa-prov { margin: 0; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 4.5rem); }
+  .mapa-prov svg { width: 100%; height: auto; display: block; }
+  .silueta { fill: var(--papel-2); stroke: var(--tinta-2); stroke-width: 1; }
+  .mapa-prov circle { fill: var(--celeste); stroke: var(--papel); stroke-width: 2; }
+  .mapa-prov circle.atr { fill: var(--papel); stroke: var(--tinta); stroke-width: 1.6; }
+  .mapa-prov a:hover circle, .mapa-prov a:focus-visible circle { stroke: var(--tinta); stroke-width: 2.5; }
+  .mapa-prov text { font-family: var(--f-dato); font-size: 11px; font-weight: 500; fill: #0d1b26; pointer-events: none; }
+  .mapa-prov .guia { stroke: var(--tinta-2); stroke-width: 1; stroke-dasharray: 2 2; }
+  .mapa-prov figcaption { font-size: 0.85rem; color: var(--tinta-2); margin-top: 0.5rem; }
+
+  .lugares { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 2px solid var(--tinta); }
+  .lugares > li {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-areas: 'num foto' 'num info';
+    gap: 0.8rem;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--linea);
+    scroll-margin-top: 5rem;
+  }
+  .lugares > li:target { background: color-mix(in oklab, var(--celeste) 14%, transparent); }
+  .num {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--f-dato);
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--celeste);
+    color: #0d1b26;
+  }
+  .info { min-width: 0; grid-area: info; }
+  .num { grid-area: num; }
+  .mini-foto { grid-area: foto; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 3px; display: block; background: var(--papel-2); }
+  .creditos { margin-top: 2.5rem; font-size: 0.85rem; }
+  .creditos summary { cursor: pointer; font-family: var(--f-dato); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tinta-2); min-height: 44px; display: flex; align-items: center; }
+  .creditos ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.3rem; }
+  .info h2 { font-size: 1.5rem; margin: 0 0 0.2rem; }
+  .con-ficha .info h2 { font-size: 1.8rem; }
+  .lema { margin: 0 0 0.5rem; font-style: italic; color: var(--tinta-2); }
+  .mini {
+    list-style: none;
+    margin: 0.4rem 0 1.3rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 3px;
+    align-items: end;
+    height: 2.4rem;
+  }
+  .mini li { position: relative; height: calc(var(--h) * 100%); min-height: 2px; border-radius: 1px; background: var(--arena); }
+  .mini li.a { background: var(--cerro); }
+  .mini li.b { background: var(--glaciar); }
+  .mini li.n { background: var(--linea); }
+  .mini li.actual { outline: 2px solid var(--tinta); outline-offset: 1px; }
+  .mini li span {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.15rem;
+    text-align: center;
+    font-family: var(--f-dato);
+    font-size: 0.6rem;
+    color: var(--tinta-2);
+    text-transform: uppercase;
+  }
+  .dato { margin: 0; font-family: var(--f-dato); font-size: 0.78rem; }
+  .dato.apagado { color: var(--tinta-2); }
+  .ir { display: inline-block; margin-top: 0.5rem; font-family: var(--f-dato); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .otras { margin-top: 4rem; }
+  .otras h2 { font-size: 1.6rem; margin-bottom: 0.8rem; }
+  .otras ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .otras a {
+    display: inline-block;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--linea);
+    border-radius: 2px;
+    color: var(--tinta);
+    text-decoration: none;
+    font-family: var(--f-titulo);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .otras a:hover { border-color: var(--celeste); color: var(--celeste-texto); }
+
+  @media (max-width: 52rem) {
+    .cuerpo { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+    .mapa-prov { position: static; }
+  }
+</style>

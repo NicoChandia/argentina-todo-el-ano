@@ -1,0 +1,341 @@
+---
+import Base from '../layouts/Base.astro';
+import Calendario from './Calendario.astro';
+import Mapa from './Mapa.astro';
+import Intro from './Intro.astro';
+import Avisos from './Avisos.astro';
+import infoProv from '../data/provincias-info.json';
+import Credito from './Credito.astro';
+import ElegirProvincia from './ElegirProvincia.astro';
+import { archivoProvincia, cantidadLugares } from '../lib/lugares';
+import { destacados, destinos as todos, type Region } from '../data/destinos';
+const destinos = destacados();
+import { foto, TAMANOS } from '../lib/fotos';
+import { MESES, temporada } from '../lib/temporada';
+import { listaMeses, mayuscula, mesesCortos, mesesLargos, numero, regiones, t as textos, tr, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const x = textos(lang).inicio;
+const MESES_LARGOS = mesesLargos(lang);
+const CORTOS = mesesCortos(lang);
+const imagenSocial = foto('Fitz Roy El Chalten sunrise-17.jpg', 1280);
+const nombre = (d: (typeof destinos)[number]) => tr(d.nombre, lang);
+const enlace = (d: (typeof destinos)[number]) => '<a href="' + url(lang, d.id + '/') + '">' + nombre(d) + '</a>';
+
+
+const orden: Region[] = ['Norte', 'Litoral', 'Cuyo', 'Centro', 'Buenos Aires', 'Patagonia'];
+// En la portada cada región llena al menos una fila de tres tarjetas: a los destacados se
+// suman estos (solo acá; el calendario general sigue usando los destacados).
+const SUMAR_PORTADA = ['salta', 'rosario', 'gualeguaychu', 'san-rafael', 'san-juan', 'cordoba', 'villa-carlos-paz', 'villa-general-belgrano', 'buenos-aires', 'tandil'];
+const ordenRegiones: Region[] = ['Norte', 'Litoral', 'Cuyo', 'Centro', 'Buenos Aires', 'Patagonia'];
+const tramos = orden.map((region) => ({ region, ...regiones[region][lang] }));
+// Hallazgos calculados con los datos: se actualizan solos cuando cambia temporada.json.
+const medidos = destinos
+  .map((d) => ({ d, t: temporada(d) }))
+  .filter((x): x is { d: (typeof destinos)[number]; t: NonNullable<ReturnType<typeof temporada>> } => x.t !== null)
+  .map(({ d, t }) => {
+    const validos = t.meses.filter((v): v is number => v !== null);
+    const min = Math.min(...validos);
+    return { d, t, razon: t.max / min, pico: t.meses.indexOf(t.max), valle: t.meses.indexOf(min), min };
+  });
+const contraste = [...medidos].sort((a, b) => b.razon - a.razon)[0];
+const parejo = [...medidos].sort((a, b) => a.razon - b.razon)[0];
+const conteoPicos = MESES.map((_, i) => medidos.filter((m) => m.pico === i).length);
+const mesPico = conteoPicos.indexOf(Math.max(...conteoPicos));
+const uno = (v: number) => numero(v, lang, 1);
+
+const grupos = tramos
+  .map((t) => ({ ...t, lista: todos.filter((d) => d.region === t.region && (d.destacado || SUMAR_PORTADA.includes(d.id))).slice(0, Math.max(3, destinos.filter((d) => d.region === t.region).length)) }))
+  .filter((g) => g.lista.length);
+---
+<Base
+  lang={lang}
+  ruta=""
+  titulo={x.titulo}
+  descripcion={x.descripcion}
+  imagen={imagenSocial.src}
+  datos={{ '@type': 'WebSite', name: textos(lang).marca.join(' '), description: x.descripcion, author: { '@type': 'Person', name: 'Nicolás Chandia', url: 'https://www.linkedin.com/in/nicolas-chandia' } }}
+>
+  <Intro lang={lang} />
+
+  <!-- Los avisos van primero: es lo más urgente antes de viajar. -->
+  <div class="envoltura avisos-inicio">
+    <Avisos lang={lang} />
+  </div>
+
+  <section id="mapa" class="envoltura bloque">
+    <div class="encabezado">
+      <p class="etiqueta">{x.mapa.etiqueta}</p>
+      <h2>{x.mapa.h2}</h2>
+      <p>{x.mapa.p}</p>
+    </div>
+    <Mapa lang={lang} />
+    <p class="ver-todas"><a href="#provincias">{textos(lang).provincia.verTodas}</a></p>
+  </section>
+
+  <section id="provincias" class="envoltura bloque provincias-indice">
+    <div class="encabezado">
+      <p class="etiqueta">{textos(lang).provincia.seccion.etiqueta}</p>
+      <h2>{textos(lang).provincia.seccion.h2}</h2>
+      <p>{textos(lang).provincia.seccion.p}</p>
+    </div>
+    <ElegirProvincia lang={lang} />
+    {ordenRegiones.map((r) => (
+      <div class="region-prov">
+        <h3>{regiones[r][lang].nombre}</h3>
+        <ul class="prov-tarjetas">
+          {infoProv.filter((p) => p.region === r).map((p) => {
+            const archivo = archivoProvincia(p.slug);
+            const f = archivo ? foto(archivo, 640) : null;
+            return (
+              <li>
+                <a class="prov-tarjeta" href={url(lang, `provincia/${p.slug}/`)}>
+                  {f ? <img src={f.src} srcset={f.srcset} sizes="(max-width: 40rem) 46vw, (max-width: 72rem) 30vw, 17rem" alt="" loading="lazy" /> : <span class="sin-foto"></span>}
+                  <span class="prov-nombre">{p.nombre}</span>
+                  <span class="prov-cant">{textos(lang).provincia.lugares(cantidadLugares(p.nombre))}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))}
+  </section>
+
+  <section id="calendario" class="envoltura bloque">
+    <div class="encabezado">
+      <p class="etiqueta">{x.calendario.etiqueta}</p>
+      <h2>{x.calendario.h2}</h2>
+      <p>{x.calendario.p}</p>
+    </div>
+    <Calendario lang={lang} />
+  </section>
+
+  {medidos.length >= 3 && (
+    <section class="envoltura bloque hallazgos" aria-labelledby="titulo-hallazgos">
+      <p class="etiqueta">{x.hallazgos.etiqueta}</p>
+      <h2 id="titulo-hallazgos">{x.hallazgos.h2}</h2>
+      <div class="hallazgos-grilla">
+        <article>
+          <p class="cifra">{uno(contraste.razon)}<span>{x.hallazgos.veces}</span></p>
+          <p set:html={x.hallazgos.contraste(enlace(contraste.d), MESES_LARGOS[contraste.pico], uno(contraste.razon), MESES_LARGOS[contraste.valle])} />
+        </article>
+        <article>
+          <p class="cifra">{Math.round((parejo.min / parejo.t.max) * 100)}<span>%</span></p>
+          <p set:html={x.hallazgos.parejo(enlace(parejo.d), Math.round((parejo.min / parejo.t.max) * 100))} />
+        </article>
+        <article>
+          <p class="cifra">{conteoPicos[mesPico]}<span>{x.hallazgos.de(medidos.length)}</span></p>
+          <p>{x.hallazgos.picos(mayuscula(MESES_LARGOS[mesPico]), conteoPicos[mesPico], medidos.length, mesPico !== 6 ? conteoPicos[6] : 0)}</p>
+        </article>
+      </div>
+    </section>
+  )}
+
+  <section id="destinos" class="bloque">
+    <div class="envoltura">
+      <div class="encabezado">
+        <p class="etiqueta">{x.destinos.etiqueta}</p>
+        <h2>{x.destinos.h2}</h2>
+      </div>
+    </div>
+    {grupos.map((g) => (
+      <div class="tramo">
+        <div class="envoltura tramo-titulo">
+          <h3>{g.nombre}</h3>
+          <p>{g.texto}</p>
+        </div>
+        <div class="envoltura tarjetas">
+          {g.lista.map((d) => {
+            const f = foto(d.fotos[0], 640);
+            const t = temporada(d);
+            return (
+              <a class="tarjeta" href={url(lang, `${d.id}/`)}>
+                <div class="tarjeta-foto">
+                  <img src={f.src} srcset={f.srcset} sizes={TAMANOS.tarjeta} alt={`${nombre(d)}, ${d.provincia}`} loading="lazy" />
+                  <span class="lat">{d.latitud}</span>
+                </div>
+                <div class="tarjeta-texto">
+                  <p class="etiqueta">{d.provincia}</p>
+                  <h4>{nombre(d)}</h4>
+                  <p class="lema">{tr(d.lema, lang)}</p>
+                  {t ? (
+                    <>
+                      <ol class="mini" aria-hidden="true">
+                        {t.relativo.map((r, i) => (
+                          <li class={t.nivel[i] ?? 'sin'} style={`--h:${r ?? 0}`} title={CORTOS[i]}></li>
+                        ))}
+                      </ol>
+                      <p class="dato">{x.tarjeta.tranquilo(listaMeses(t.calmos, lang))}</p>
+                    </>
+                  ) : (
+                    <p class="dato apagado">{d.localidadEOH ? x.tarjeta.enCarga : x.tarjeta.sinMedicion}</p>
+                  )}
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    ))}
+  </section>
+
+
+  <section id="fuentes" class="envoltura bloque fuentes">
+    <p class="etiqueta">{x.fuentes.etiqueta}</p>
+    <h2>{x.fuentes.h2}</h2>
+    {x.fuentes.p.map((html) => <p set:html={html} />)}
+  </section>
+</Base>
+
+<style>
+  .bloque { margin-top: 5.5rem; }
+  .avisos-inicio { margin-top: 2.5rem; }
+  .encabezado { max-width: 46rem; margin-bottom: 2rem; }
+  .encabezado h2, .fuentes h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-block: 0.4rem 0.8rem; }
+  .encabezado p:not(.etiqueta) { margin: 0; color: var(--tinta-2); }
+
+  .tramo { margin-top: 3.5rem; }
+  .tramo-titulo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem 1.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+  }
+  .tramo-titulo h3 {
+    font-size: 2rem;
+    text-transform: uppercase;
+    color: var(--celeste-texto);
+  }
+  .tramo-titulo p { margin: 0; color: var(--tinta-2); font-style: italic; }
+  .tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 2.2rem 1.6rem;
+  }
+  .tarjeta { color: inherit; text-decoration: none; display: flex; flex-direction: column; }
+  .tarjeta-foto { position: relative; overflow: hidden; border-radius: 3px; background: var(--papel-2); }
+  .tarjeta-foto img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .tarjeta:hover .tarjeta-foto img, .tarjeta:focus-visible .tarjeta-foto img { transform: scale(1.04); }
+  .tarjeta-foto .lat {
+    position: absolute;
+    left: 0.7rem;
+    top: 0.7rem;
+    font-family: var(--f-dato);
+    font-size: 0.7rem;
+    color: #ffffff;
+    background: rgb(8 16 22 / 0.55);
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+  }
+  .tarjeta-texto { padding-top: 0.9rem; }
+  .tarjeta-texto .etiqueta { margin: 0; }
+  .tarjeta h4 {
+    font-family: var(--f-titulo);
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0.25rem 0 0.3rem;
+    text-wrap: balance;
+  }
+  .tarjeta:hover h4 { color: var(--celeste-texto); }
+  .lema { margin: 0 0 0.8rem; color: var(--tinta-2); font-style: italic; }
+  .mini {
+    list-style: none;
+    margin: 0 0 0.45rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    align-items: end;
+    height: 2rem;
+  }
+  .mini li { height: calc(var(--h) * 100%); min-height: 2px; background: var(--arena); border-radius: 1px; }
+  .mini li.alta { background: var(--cerro); }
+  .mini li.baja { background: var(--glaciar); }
+  .mini li.sin { background: var(--linea); }
+  .dato { margin: 0; font-family: var(--f-dato); font-size: 0.78rem; }
+  .dato.apagado { color: var(--tinta-2); }
+
+  .fuentes p:not(.etiqueta) { max-width: 62ch; }
+
+  .provincias-indice h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-block: 0.4rem 1.6rem; }
+  .region-prov { margin-top: 1.8rem; }
+  .region-prov h3 {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    color: var(--celeste-texto);
+    border-bottom: 2px solid var(--tinta);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.7rem;
+  }
+  .prov-tarjetas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 13rem), 1fr)); gap: 0.6rem; }
+  .prov-tarjeta {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    border-radius: 4px;
+    overflow: hidden;
+    color: #fff;
+    text-decoration: none;
+    background: var(--papel-2);
+  }
+  .prov-tarjeta img, .prov-tarjeta .sin-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+  .prov-tarjeta .sin-foto { background: linear-gradient(135deg, var(--celeste), var(--glaciar)); }
+  .prov-tarjeta::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgb(5 15 22 / 0.78), rgb(5 15 22 / 0) 60%); }
+  .prov-nombre, .prov-cant { position: absolute; left: 0.7rem; right: 0.7rem; z-index: 1; text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
+  .prov-nombre { bottom: 1.6rem; font-family: var(--f-titulo); font-weight: 700; font-size: 1.35rem; line-height: 1.05; }
+  .prov-cant { bottom: 0.55rem; font-family: var(--f-dato); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; }
+  .prov-tarjeta:hover img, .prov-tarjeta:focus-visible img { transform: scale(1.05); }
+  @media (prefers-reduced-motion: reduce) { .prov-tarjeta img { transition: none; } }
+  .ver-todas { margin-top: 1rem; font-family: var(--f-dato); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .hallazgos h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-block: 0.4rem 1.6rem; }
+  .hallazgos-grilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 2rem;
+  }
+  .hallazgos article { border-top: 2px solid var(--tinta); padding-top: 0.8rem; min-width: 0; }
+  .hallazgos article p { margin: 0; }
+  .cifra {
+    font-family: var(--f-titulo);
+    font-weight: 700;
+    font-size: 4.2rem;
+    line-height: 1;
+    color: var(--cerro);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 0.6rem !important;
+  }
+  .cifra span { font-size: 1.3rem; margin-left: 0.4rem; color: var(--tinta-2); font-weight: 600; }
+
+  @media (max-width: 40rem) {
+    .bloque { margin-top: 4rem; }
+    .tramo { margin-top: 2.6rem; }
+
+    /* En celular, cada región es un carrusel: se desliza con el dedo y cada tarjeta encaja. */
+    .tarjetas {
+      display: flex;
+      gap: 0.9rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: max(16px, env(safe-area-inset-left, 0px));
+      overscroll-behavior-x: contain;
+      padding-bottom: 0.6rem;
+      scrollbar-width: thin;
+    }
+    .tarjeta { flex: 0 0 82%; scroll-snap-align: start; }
+    .tarjeta:only-child { flex-basis: 100%; }
+    .tarjeta h4 { font-size: 1.7rem; }
+    .cifra { font-size: 3.4rem; }
+  }
+</style>

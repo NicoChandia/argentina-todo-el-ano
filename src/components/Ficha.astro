@@ -1,0 +1,338 @@
+---
+import Base from '../layouts/Base.astro';
+import Curva from './Curva.astro';
+import Credito from './Credito.astro';
+import Clima from './Clima.astro';
+import Galeria from './Galeria.astro';
+import MesAMes from './MesAMes.astro';
+import { meses as mesesDe, antesDeIr, estacionDe } from '../lib/meses';
+import { destinos } from '../data/destinos';
+import infoProv from '../data/provincias-info.json';
+import { foto, TAMANOS } from '../lib/fotos';
+import { temporada } from '../lib/temporada';
+import { estacionesDe } from '../lib/estaciones';
+import { estaciones as nombresEstacion, listaMeses, numero, regiones, t as textos, tr, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  i: number;
+}
+const { lang, i } = Astro.props;
+const x = textos(lang).ficha;
+const d = destinos[i];
+const anterior = destinos[i - 1];
+const siguiente = destinos[i + 1];
+const nombre = tr(d.nombre, lang);
+const lema = tr(d.lema, lang);
+const fotos = d.fotos.map((a) => foto(a, 1280));
+const [principal, ...galeria] = fotos;
+const t = temporada(d);
+const slugProv = infoProv.find((p) => p.nombre === d.provincia)?.slug;
+const mesAMes = mesesDe(d, lang);
+const antes = antesDeIr(d, lang);
+const A = { es: { t: 'Antes de ir', mejor: 'Mejor época', clima: 'Clima', llevar: 'Llevá' }, pt: { t: 'Antes de ir', mejor: 'Melhor época', clima: 'Clima', llevar: 'Leve' }, en: { t: 'Before you go', mejor: 'Best time', clima: 'Weather', llevar: 'Pack' } }[lang];
+const sufijo = ` | ${textos(lang).marca.join(' ')}`;
+const porEstacion = estacionesDe(d.id, lang);
+const otraLocalidad = d.localidadEOH && d.localidadEOH !== d.nombre.es && !d.localidadEOH.endsWith(d.nombre.es);
+---
+<Base
+  lang={lang}
+  ruta={`${d.id}/`}
+  titulo={x.titulo(nombre) + sufijo}
+  descripcion={x.descripcion(nombre, lema, t ? listaMeses(t.calmos, lang) : null)}
+  imagen={principal?.src}
+  datos={{
+    '@type': 'TouristDestination',
+    name: nombre,
+    description: lema,
+    ...((d as any).lat != null ? { geo: { '@type': 'GeoCoordinates', latitude: (d as any).lat, longitude: (d as any).lon } } : {}),
+    containedInPlace: { '@type': 'AdministrativeArea', name: d.provincia, containedInPlace: { '@type': 'Country', name: 'Argentina' } },
+  }}
+>
+  <section class={`cabecera ${principal ? '' : 'sin-foto'}`}>
+    {principal && <img src={principal.src} srcset={principal.srcset} sizes={TAMANOS.pantalla} alt={`${nombre}, ${d.provincia}`} fetchpriority="high" />}
+    <div class="cabecera-texto">
+      <div class="envoltura">
+        <p class="etiqueta sobre">{d.provincia} · {regiones[d.region][lang].nombre} · {d.latitud}</p>
+        <h1>{nombre}</h1>
+        <p class="lema">{lema}</p>
+      </div>
+    </div>
+    {principal && <Credito f={principal} clase="sobre credito-cabecera" lang={lang} />}
+  </section>
+
+  <div class="envoltura cuerpo">
+    <section class="relato">
+      <p class="intro">{tr(d.texto, lang)}</p>
+      <h2>{x.imperdibles}</h2>
+      <ul class="imperdibles">
+        {tr(d.imperdibles, lang).map((item) => <li>{item}</li>)}
+      </ul>
+      {d.llegar && (
+        <>
+          <h2>{x.llegar}</h2>
+          <p class="llegar">{tr(d.llegar, lang)}</p>
+        </>
+      )}
+      {slugProv && <p class="a-provincia"><a href={url(lang, `provincia/${slugProv}/`)}>{x.verProvincia(d.provincia)}</a></p>}
+    </section>
+
+    <aside class="resumen" aria-label={x.cuandoIr}>
+      <p class="etiqueta">{x.cuandoIr}</p>
+      {t ? (
+        <>
+          <dl>
+            <div><dt>{x.conEspacio}</dt><dd class="frio">{listaMeses(t.calmos, lang)}</dd></div>
+            <div><dt>{x.movimiento}</dt><dd class="calido">{listaMeses(t.picos, lang)}</dd></div>
+            <div>
+              <dt>{x.viajeros(t.anios, t.mesesConDato)}</dt>
+              <dd>{numero(t.totalAnual, lang)}</dd>
+            </div>
+          </dl>
+          {otraLocalidad && <p class="sin-dato">{x.datosDe(d.localidadEOH!)}</p>}
+        </>
+      ) : (
+        <p class="sin-dato">{d.cuando ? tr(d.cuando, lang) : d.localidadEOH ? x.enCarga : x.sinMedicion(nombre)}</p>
+      )}
+      {antes && (
+        <div class="antes">
+          <p class="etiqueta">{A.t}</p>
+          {antes.mejor && <p><strong>{A.mejor}:</strong> {antes.mejor}</p>}
+          {antes.clima && <p><strong>{A.clima}:</strong> {antes.clima}</p>}
+          {antes.llevar && <p><strong>{A.llevar}:</strong> {antes.llevar}</p>}
+        </div>
+      )}
+    </aside>
+  </div>
+
+  {mesAMes ? (
+    <MesAMes lang={lang} nombre={nombre} meses={mesAMes} datos={!!t || !!estacionDe(d.id)}>
+      {t && (
+        <section class="temporada">
+          <h2>{x.mesAMes}</h2>
+          <p class="explica">{x.explica(nombre)}</p>
+          <Curva t={t} nombre={nombre} lang={lang} />
+        </section>
+      )}
+      <Clima lang={lang} destino={d.id} nombre={nombre} />
+    </MesAMes>
+  ) : (
+    <Clima lang={lang} destino={d.id} nombre={nombre} />
+  )}
+
+  {porEstacion && (
+    <section class="envoltura estaciones" aria-labelledby="titulo-estaciones">
+      <h2 id="titulo-estaciones">{x.estaciones}</h2>
+      <p class="explica">{x.estacionesIntro(nombre)}</p>
+      <div class="estaciones-fila">
+        {porEstacion.map((e) => (
+          <article class={`estacion ${e.id}`} data-estacion={e.id}>
+            {e.foto ? (
+              <figure>
+                <img src={e.foto.src} srcset={e.foto.srcset} sizes="(max-width: 40rem) 80vw, 18rem" alt={`${nombre}, ${nombresEstacion[lang][e.id].nombre}`} loading="lazy" />
+                <figcaption><Credito f={e.foto} lang={lang} /></figcaption>
+              </figure>
+            ) : (
+              <div class="sin-foto" aria-hidden="true"></div>
+            )}
+            <p class="etiqueta">{nombresEstacion[lang][e.id].meses}</p>
+            <h3>{nombresEstacion[lang][e.id].nombre} <span class="ahora" hidden>{x.ahora}</span></h3>
+            <p>{e.texto}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <Galeria fotos={galeria} alt={`${nombre}, ${d.provincia}`} lang={lang} />
+
+  <nav class="envoltura vecinos" aria-label={x.vecinos}>
+    {anterior ? (
+      <a href={url(lang, `${anterior.id}/`)} class="vecino">
+        <span class="etiqueta">{x.norte}</span>
+        <span class="nombre">{tr(anterior.nombre, lang)}</span>
+      </a>
+    ) : <span></span>}
+    {siguiente ? (
+      <a href={url(lang, `${siguiente.id}/`)} class="vecino derecha">
+        <span class="etiqueta">{x.sur}</span>
+        <span class="nombre">{tr(siguiente.nombre, lang)}</span>
+      </a>
+    ) : <span></span>}
+  </nav>
+</Base>
+
+<script>
+  // Marca la estación actual (hemisferio sur) con "Ahora".
+  const m = new Date().getMonth();
+  const actual = m === 11 || m <= 1 ? 'verano' : m <= 4 ? 'otono' : m <= 7 ? 'invierno' : 'primavera';
+  document.querySelectorAll<HTMLElement>(`.estacion[data-estacion="${actual}"]`).forEach((el) => {
+    el.classList.add('actual');
+    el.querySelector<HTMLElement>('.ahora')?.removeAttribute('hidden');
+  });
+</script>
+
+<style>
+  .antes { margin-top: 1.4rem; background: var(--papel-2); border: 1px solid var(--linea); border-radius: 6px; padding: 0.9rem 1rem; }
+  .antes p { margin: 0 0 0.55rem; font-size: 0.95rem; line-height: 1.45; }
+  .antes p:last-child { margin-bottom: 0; }
+  .llegar { max-width: 60ch; }
+  .a-provincia { margin-top: 1.4rem; font-family: var(--f-dato); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cabecera {
+    position: relative;
+    height: min(74vh, 46rem);
+    min-height: 26rem;
+    overflow: hidden;
+    background: #1d2a30;
+    color: var(--sobre-foto);
+  }
+  .cabecera.sin-foto { height: auto; min-height: 20rem; background: linear-gradient(160deg, var(--glaciar), #1d2a30 70%); }
+  .cabecera > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cabecera::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(8 16 22 / 0.8) 0%, rgb(8 16 22 / 0.2) 50%, rgb(8 16 22 / 0) 75%);
+  }
+  .cabecera-texto { position: absolute; inset: auto 0 0; z-index: 1; padding-block: 0 2.6rem; }
+  .cabecera h1 {
+    font-size: clamp(3rem, 9vw, 7rem);
+    text-transform: uppercase;
+    line-height: 0.9;
+    margin-block: 0.5rem 0.6rem;
+  }
+  .etiqueta.sobre { color: rgb(255 255 255 / 0.85); }
+  .cabecera .lema { margin: 0; font-size: 1.25rem; font-style: italic; color: rgb(255 255 255 / 0.92); }
+  :global(.credito-cabecera) { position: absolute; right: var(--gutter-der); bottom: 0.7rem; z-index: 1; }
+
+  .cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    gap: 3rem;
+    margin-top: 3.5rem;
+    align-items: start;
+  }
+  .relato { min-width: 0; max-width: 40rem; }
+  .intro { font-size: 1.3rem; line-height: 1.55; margin: 0 0 2.4rem; }
+  .relato h2, .temporada h2 { font-size: 2rem; margin-bottom: 0.9rem; }
+  .imperdibles { list-style: none; margin: 0 0 2.6rem; padding: 0; border-top: 1px solid var(--linea); }
+  .imperdibles li {
+    padding: 0.85rem 0 0.85rem 2rem;
+    border-bottom: 1px solid var(--linea);
+    position: relative;
+  }
+  .imperdibles li::before {
+    content: '';
+    position: absolute;
+    left: 0.2rem;
+    top: 1.35rem;
+    width: 0.9rem;
+    height: 2px;
+    background: var(--glaciar);
+  }
+
+  .resumen {
+    border-top: 2px solid var(--tinta);
+    padding-top: 0.8rem;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
+  }
+  .resumen dl { margin: 0.6rem 0 0; display: grid; gap: 1rem; }
+  .resumen dt { font-size: 0.85rem; color: var(--tinta-2); }
+  .resumen dd {
+    margin: 0.1rem 0 0;
+    font-family: var(--f-titulo);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .resumen dd.frio { color: var(--glaciar); }
+  .resumen dd.calido { color: var(--cerro); }
+  .sin-dato { color: var(--tinta-2); margin: 0.6rem 0 0; }
+
+  .temporada { margin-top: 4.5rem; }
+  .explica { color: var(--tinta-2); max-width: 60ch; margin: 0 0 1.6rem; }
+
+  .estaciones { margin-top: 4.5rem; }
+  .estaciones h2 { font-size: 2rem; margin-bottom: 0.9rem; }
+  .estaciones-fila {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.4rem;
+  }
+  .estacion { min-width: 0; }
+  .estacion figure { margin: 0 0 0.7rem; }
+  .estacion img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 3px; }
+  .estacion figcaption { margin-top: 0.25rem; }
+  /* Sin foto todavía: una franja con el color de la estación. */
+  .sin-foto { height: 6px; border-radius: 3px; margin-bottom: 0.8rem; background: var(--g); }
+  .estacion.verano { --g: linear-gradient(150deg, var(--arena), var(--cerro)); }
+  .estacion.otono { --g: linear-gradient(150deg, var(--cerro), #7a3b22); }
+  .estacion.invierno { --g: linear-gradient(150deg, var(--celeste), #3d6f99); }
+  .estacion.primavera { --g: linear-gradient(150deg, #8fbf6a, var(--glaciar)); }
+  .estacion .etiqueta { margin: 0; }
+  .estacion h3 { font-size: 1.6rem; margin: 0.1rem 0 0.4rem; display: flex; align-items: center; gap: 0.5rem; }
+  .estacion > p:last-child { margin: 0; }
+  .ahora {
+    font-family: var(--f-dato);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0d1b26;
+    background: var(--celeste);
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+  }
+  .estacion.actual img { outline: 3px solid var(--celeste); outline-offset: 3px; }
+
+  .galeria {
+    margin-top: 4.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 3px;
+  }
+  .galeria figure { margin: 0; }
+  .galeria img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+  .galeria figcaption {
+    padding: 0.4rem max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  }
+
+  .vecinos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+  }
+  .vecino {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-block: 1rem;
+    border-top: 2px solid var(--tinta);
+    color: var(--tinta);
+    text-decoration: none;
+  }
+  .vecino.derecha { text-align: right; align-items: flex-end; }
+  .vecino .nombre { font-family: var(--f-titulo); font-size: 1.7rem; font-weight: 700; line-height: 1; }
+  .vecino:hover .nombre { color: var(--celeste-texto); }
+
+  @media (max-width: 52rem) {
+    .estaciones-fila {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      overscroll-behavior-x: contain;
+      gap: 1rem;
+      padding-bottom: 0.5rem;
+    }
+    .estacion { flex: 0 0 78%; scroll-snap-align: start; }
+    .cuerpo { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; margin-top: 2rem; }
+    /* En celular, el resumen de cuándo ir va primero: es lo que más se busca. */
+    .resumen { position: static; order: -1; }
+    .resumen dl { grid-template-columns: 1fr 1fr; gap: 0.8rem 1.2rem; }
+    .resumen dl > div:last-child { grid-column: 1 / -1; }
+    .intro { font-size: 1.15rem; }
+  }
+</style>

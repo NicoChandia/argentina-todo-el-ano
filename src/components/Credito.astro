@@ -1,0 +1,28 @@
+---
+import type { Foto } from '../lib/fotos';
+import { t, type Lang } from '../i18n';
+interface Props {
+  f: Foto;
+  clase?: string;
+  lang: Lang;
+}
+const { f, clase = '', lang } = Astro.props;
+---
+<span class={`credito ${clase}`}>
+  {t(lang).foto}: {f.autor ? <a href={f.pagina}>{f.autor}</a> : <a href={f.pagina}>Wikimedia Commons</a>}
+  {f.licencia && (f.licenciaUrl ? <> · <a href={f.licenciaUrl}>{f.licencia}</a></> : <> · {f.licencia}</>)}
+</span>
+
+<style>
+  .credito {
+    font-family: var(--f-dato);
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--tinta-2);
+  }
+  .credito a { color: inherit; }
+  .credito.sobre {
+    color: var(--sobre-foto);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+  }
+</style>

@@ -1,0 +1,10 @@
+{
+  "_ayuda": "Una foto de Wikimedia Commons por destino y estación (nombre exacto, sin 'File:'). Elegilas con `npm run buscar-fotos`. Si una estación queda vacía, se muestra solo su texto.",
+  "bariloche": {},
+  "san-martin-de-los-andes": {},
+  "el-chalten": {},
+  "el-calafate": {},
+  "ushuaia": {},
+  "mendoza": {},
+  "puerto-madryn": { "primavera": "Southern Right Whale - Golfo Nuevo.jpg" }
+}

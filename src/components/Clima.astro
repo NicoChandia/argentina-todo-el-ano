@@ -1,0 +1,130 @@
+---
+// Clima mes a mes de un destino: temperaturas máxima y mínima (líneas) y lluvia (barras),
+// con los valores climatológicos medios de la estación del SMN más cercana.
+import clima from '../data/clima.json';
+import { mesesCortos, mesesLargos, numero, t as textos, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  destino: string;
+  nombre: string;
+}
+const { lang, destino, nombre } = Astro.props;
+const ref = (clima.destinos as Record<string, { estacion: string; distanciaKm?: number }>)[destino];
+const est = ref ? (clima.estaciones as Record<string, { nombre: string; periodo: string; max: number[]; min: number[] | null; lluvia: number[] }>)[ref.estacion] : null;
+const c = textos(lang).clima;
+const CORTOS = mesesCortos(lang);
+const LARGOS = mesesLargos(lang);
+
+// Geometría del gráfico
+const W = 640, H = 260, IZQ = 34, DER = 58, ARR = 14, ABA = 26;
+const anchoMes = (W - IZQ - DER) / 12;
+let ejeT: number[] = [], yT = (_: number) => 0, yP = (_: number) => 0, maxP = 0, tMin = 0, tMax = 0;
+let resumen: string[] = [];
+if (est) {
+  const temps = [...est.max, ...(est.min ?? [])];
+  tMin = Math.floor(Math.min(...temps, 0) / 5) * 5;
+  tMax = Math.ceil(Math.max(...temps) / 5) * 5;
+  maxP = Math.max(50, Math.ceil(Math.max(...est.lluvia) / 50) * 50);
+  yT = (v: number) => ARR + (1 - (v - tMin) / (tMax - tMin)) * (H - ARR - ABA);
+  yP = (v: number) => (v / maxP) * (H - ARR - ABA);
+  for (let v = tMin; v <= tMax; v += tMax - tMin > 25 ? 10 : 5) ejeT.push(v);
+
+  const iMax = est.max.indexOf(Math.max(...est.max));
+  const frio = est.min ?? est.max;
+  const iFrio = frio.indexOf(Math.min(...frio));
+  const iLluvia = est.lluvia.indexOf(Math.max(...est.lluvia));
+  const iSeco = est.lluvia.indexOf(Math.min(...est.lluvia));
+  const n1 = (v: number) => numero(v, lang, Number.isInteger(v) ? 0 : 1);
+  resumen = [
+    c.calor(LARGOS[iMax], n1(est.max[iMax])),
+    est.min ? c.frio(LARGOS[iFrio], n1(frio[iFrio])) : c.frioMax(LARGOS[iFrio], n1(frio[iFrio])),
+    c.llueve(LARGOS[iLluvia], numero(Math.round(est.lluvia[iLluvia]), lang)),
+    c.seco(LARGOS[iSeco]),
+  ];
+}
+const cx = (i: number) => IZQ + anchoMes * (i + 0.5);
+const linea = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${cx(i).toFixed(1)},${yT(v).toFixed(1)}`).join(' ');
+const n1 = (v: number) => numero(v, lang, Number.isInteger(v) ? 0 : 1);
+---
+{est && (
+  <section class="envoltura clima" aria-labelledby="titulo-clima">
+    <h2 id="titulo-clima">{c.titulo}</h2>
+    <p class="explica">{c.explica(nombre)}</p>
+    <p class="resumen">{resumen.join(' ')}</p>
+    <figure>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby="clima-desc">
+        <desc id="clima-desc">{resumen.join(' ')}</desc>
+        {ejeT.map((v) => (
+          <g class="eje">
+            <line x1={IZQ} x2={W - DER} y1={yT(v)} y2={yT(v)} />
+            <text x={IZQ - 6} y={yT(v) + 4} text-anchor="end">{v}°</text>
+          </g>
+        ))}
+        <text class="eje-p" x={W - DER + 6} y={ARR + 4}>{maxP} mm</text>
+        <text class="eje-p" x={W - DER + 6} y={H - ABA + 4}>0</text>
+        {est.lluvia.map((v, i) => (
+          <rect class="lluvia" x={(cx(i) - anchoMes * 0.32).toFixed(1)} width={(anchoMes * 0.64).toFixed(1)} y={(H - ABA - yP(v)).toFixed(1)} height={yP(v).toFixed(1)} rx="1.5" />
+        ))}
+        <path class="t-max" d={linea(est.max)} />
+        {est.min && <path class="t-min" d={linea(est.min)} />}
+        {est.max.map((v, i) => <circle class="p-max" cx={cx(i)} cy={yT(v)} r="3" />)}
+        {est.min && est.min.map((v, i) => <circle class="p-min" cx={cx(i)} cy={yT(v)} r="3" />)}
+        {CORTOS.map((m, i) => <text class="mes" x={cx(i)} y={H - 8} text-anchor="middle">{m}</text>)}
+      </svg>
+      <figcaption>
+        <span class="clave"><i class="k-max"></i>{c.max}</span>
+        {est.min && <span class="clave"><i class="k-min"></i>{c.min}</span>}
+        <span class="clave"><i class="k-lluvia"></i>{c.lluvia}</span>
+      </figcaption>
+    </figure>
+    <details class="tabla">
+      <summary>{c.tabla}</summary>
+      <div class="tabla-in">
+        <table>
+          <thead><tr><th scope="col">{c.mes}</th><th scope="col">{c.max}</th>{est.min && <th scope="col">{c.min}</th>}<th scope="col">{c.lluvia}</th></tr></thead>
+          <tbody>
+            {LARGOS.map((m, i) => (
+              <tr><th scope="row">{m}</th><td>{n1(est.max[i])} °C</td>{est.min && <td>{n1(est.min[i])} °C</td>}<td>{numero(Math.round(est.lluvia[i]), lang)} mm</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    <p class="fuente">
+      {c.fuente(est.nombre, est.periodo)}{ref?.distanciaKm ? ` ${c.distancia(ref.distanciaKm)}` : ''}
+      {' '}<a href={clima.url} target="_blank" rel="noopener">smn.gob.ar</a>
+    </p>
+  </section>
+)}
+
+<style>
+  .clima { margin-top: 4.5rem; }
+  .clima h2 { font-size: 2rem; margin-bottom: 0.4rem; }
+  .explica { color: var(--tinta-2); margin: 0 0 0.6rem; }
+  .resumen { max-width: 60ch; margin: 0 0 1rem; }
+  figure { margin: 0; }
+  svg { width: 100%; height: auto; display: block; max-width: 760px; }
+  .eje line { stroke: var(--linea); stroke-width: 1; }
+  .eje text, .eje-p, .mes { font-family: var(--f-dato); font-size: 11px; fill: var(--tinta-2); }
+  .lluvia { fill: color-mix(in oklab, var(--celeste) 55%, transparent); }
+  .t-max, .t-min { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+  .t-max { stroke: var(--cerro); }
+  .t-min { stroke: var(--glaciar); }
+  .p-max { fill: var(--cerro); }
+  .p-min { fill: var(--glaciar); }
+  figcaption { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: 0.4rem; font-family: var(--f-dato); font-size: 0.75rem; }
+  .clave { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .clave i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+  .k-max { background: var(--cerro); }
+  .k-min { background: var(--glaciar); }
+  .k-lluvia { height: 10px !important; width: 10px !important; background: color-mix(in oklab, var(--celeste) 55%, transparent); }
+  .tabla { margin-top: 1rem; }
+  .tabla summary { cursor: pointer; font-family: var(--f-dato); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; min-height: 44px; display: flex; align-items: center; }
+  .tabla-in { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 0.92rem; min-width: 18rem; }
+  th, td { padding: 0.3rem 0.8rem 0.3rem 0; text-align: left; border-bottom: 1px solid var(--linea); }
+  td { font-family: var(--f-dato); font-size: 0.82rem; }
+  thead th { font-family: var(--f-dato); font-size: 0.72rem; text-transform: uppercase; color: var(--tinta-2); }
+  .fuente { font-size: 0.82rem; color: var(--tinta-2); margin-top: 0.8rem; }
+</style>

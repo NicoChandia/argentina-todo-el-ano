@@ -1,0 +1,163 @@
+---
+// Calendario de temporadas: una fila por destino, un casillero por mes.
+// La intensidad de cada casillero es relativa al pico de ese mismo destino.
+import { destacados } from '../data/destinos';
+const destinos = destacados();
+import { temporada } from '../lib/temporada';
+import { mesesCortos, mesesLargos, numero, t as textos, tr, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const x = textos(lang).calendario;
+const MESES = mesesCortos(lang);
+const LARGOS = mesesLargos(lang);
+const filas = destinos.map((d) => ({ d, t: temporada(d) }));
+const conDatos = filas.filter((f) => f.t).length;
+const faltantes = LARGOS.filter((_, i) => filas.some((f) => f.t && f.t.meses[i] === null));
+const nombreDe = (d: (typeof destinos)[number]) => tr(d.nombre, lang);
+---
+<div class="calendario">
+  <div class="desliza" tabindex="0" role="region" aria-label={x.aria}>
+    <table>
+      <caption class="sr">{x.caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="col-destino"><span class="etiqueta">{x.destino}</span></th>
+          {MESES.map((m) => <th scope="col" class="col-mes"><span class="etiqueta">{m}</span></th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map(({ d, t }) => (
+          <tr>
+            <th scope="row" class="col-destino">
+              <a href={url(lang, `${d.id}/`)}>{nombreDe(d)}</a>
+              <span class="lat">{d.latitud}{d.localidadEOH && d.localidadEOH !== d.nombre.es && !d.localidadEOH.endsWith(d.nombre.es) ? ` · ${x.datos(d.localidadEOH)}` : ''}</span>
+            </th>
+            {t ? (
+              t.meses.map((v, i) => (
+                <td
+                  class={v === null ? 'nulo' : t.calmos.includes(i) ? 'calmo' : t.picos.includes(i) ? 'pico' : ''}
+                  style={`--r: ${Math.round((t.relativo[i] ?? 0) * 100)}%`}
+                  title={v === null ? x.sinDato(LARGOS[i]) : x.valor(LARGOS[i], numero(v, lang))}
+                >
+                  <span class="sr">{v === null ? x.sinDato(LARGOS[i]) : x.valor(LARGOS[i], numero(v, lang))}</span>
+                </td>
+              ))
+            ) : (
+              <td colspan="12" class="vacio">{d.localidadEOH ? x.enCarga : x.noMide}</td>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div class="leyenda">
+    <span class="rampa" aria-hidden="true"><i style="--r:8%"></i><i style="--r:35%"></i><i style="--r:65%"></i><i style="--r:100%"></i></span>
+    <span>{x.leyenda}</span>
+    <span class="marca-calmo"><i aria-hidden="true"></i>{x.calmos}</span>
+    {faltantes.length > 0 && <span class="marca-nulo"><i aria-hidden="true"></i>{x.faltan(faltantes.join(', '))}</span>}
+    {conDatos === 0 && <strong>{x.vista}</strong>}
+  </div>
+</div>
+
+<style>
+  .desliza { overflow-x: auto; border-top: 2px solid var(--tinta); }
+  .desliza:focus-visible { outline: 3px solid var(--celeste); outline-offset: 2px; }
+  table { width: 100%; min-width: 46rem; border-collapse: separate; border-spacing: 3px; }
+  th { text-align: left; font-weight: 400; }
+  thead th { padding: 0.6rem 0 0.3rem; }
+  .col-mes { text-align: center; }
+  .col-destino {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--papel);
+    width: 14rem;
+    padding-right: 0.8rem;
+  }
+  tbody .col-destino { padding-block: 0.15rem; line-height: 1.15; }
+  tbody .col-destino a {
+    font-family: var(--f-titulo);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--tinta);
+    text-decoration: none;
+    display: block;
+  }
+  tbody .col-destino a:hover { color: var(--celeste-texto); text-decoration: underline; }
+  .lat { font-family: var(--f-dato); font-size: 0.68rem; color: var(--tinta-2); }
+  td {
+    height: 2.6rem;
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--cerro) calc(22% + var(--r) * 0.78), var(--papel-2));
+    position: relative;
+  }
+  td.calmo::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin: -0.225rem 0 0 -0.225rem;
+    border-radius: 50%;
+    background: var(--glaciar);
+  }
+  td.nulo { background: repeating-linear-gradient(-45deg, var(--papel-2) 0 4px, var(--papel) 4px 8px); }
+  td.vacio {
+    background: repeating-linear-gradient(-45deg, var(--papel-2) 0 6px, var(--papel) 6px 12px);
+    font-family: var(--f-dato);
+    font-size: 0.74rem;
+    color: var(--tinta-2);
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+  .leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.4rem;
+    margin-top: 1rem;
+    font-size: 0.88rem;
+    color: var(--tinta-2);
+  }
+  .leyenda strong { flex-basis: 100%; font-weight: 600; color: var(--tinta); }
+  .rampa { display: inline-flex; gap: 2px; }
+  .rampa i { width: 1.3rem; height: 0.9rem; border-radius: 2px; background: color-mix(in oklab, var(--cerro) calc(22% + var(--r) * 0.78), var(--papel-2)); }
+  .marca-calmo { display: inline-flex; align-items: center; gap: 0.45rem; }
+  .marca-nulo { display: inline-flex; align-items: center; gap: 0.45rem; }
+  .marca-nulo i { width: 1.1rem; height: 0.8rem; border-radius: 2px; background: repeating-linear-gradient(-45deg, var(--papel-2) 0 3px, var(--papel) 3px 6px); border: 1px solid var(--linea); }
+  .marca-calmo i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--glaciar); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-width: 40rem) {
+    .desliza { overflow: visible; }
+    table, thead, tbody { display: block; min-width: 0; }
+    table { border-spacing: 0; }
+    tr {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 2px;
+    }
+    thead tr { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--papel); padding-block: 0.4rem 0.3rem; }
+    thead .col-destino { display: none; }
+    thead th { padding: 0; }
+    thead .etiqueta { font-size: 0.6rem; letter-spacing: 0; display: block; text-align: center; }
+    tbody tr { margin-top: 0.7rem; }
+    tbody .col-destino {
+      grid-column: 1 / -1;
+      position: static;
+      width: auto;
+      padding: 0 0 0.2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    tbody .col-destino a { font-size: 1.05rem; display: inline; }
+    td { height: 1.7rem; border-radius: 2px; }
+    td.vacio { grid-column: 1 / -1; height: 1.7rem; font-size: 0.68rem; }
+    td.calmo::after { width: 0.35rem; height: 0.35rem; margin: -0.175rem 0 0 -0.175rem; }
+  }
+</style>

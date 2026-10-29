@@ -1,0 +1,265 @@
+---
+// Asistente guiado de cada provincia: preguntas fijas con respuestas armadas con los datos
+// de la página (INDEC, avisos oficiales, números de emergencia). No usa inteligencia
+// artificial ni servicios pagos, y nunca inventa una respuesta.
+import ayuda from '../data/ayuda.json';
+import { listaMeses, mesesLargos, numero, t as textos, tr, url, type Lang } from '../i18n';
+
+interface Lugar {
+  n: number;
+  nombre: string;
+  meses: (number | null)[] | null;
+  fichaUrl?: string;
+  lema?: string;
+}
+interface Props {
+  lang: Lang;
+  provincia: string;
+  region: string;
+  lugares: Lugar[];
+  otras: { slug: string; nombre: string }[];
+}
+const { lang, provincia, region, lugares, otras } = Astro.props;
+const g = textos(lang).guia;
+const niveles = textos(lang).niveles;
+
+// Temporada de la provincia: suma de los viajeros de sus lugares medidos, mes a mes.
+const medidos = lugares.filter((l) => l.meses);
+const suma = Array.from({ length: 12 }, (_, i) => {
+  const vs = medidos.map((l) => l.meses![i]).filter((v): v is number => typeof v === 'number');
+  return vs.length === medidos.length && vs.length ? vs.reduce((a, b) => a + b, 0) : null;
+});
+const conDato = suma.map((v, i) => ({ v, i })).filter((o): o is { v: number; i: number } => o.v !== null);
+const max = conDato.length ? Math.max(...conDato.map((o) => o.v)) : 0;
+const orden = [...conDato].sort((a, b) => b.v - a.v);
+const picos = orden.filter((o) => o.v >= max * 0.8).slice(0, 3).map((o) => o.i).sort((a, b) => a - b);
+const calmos = orden.slice(-3).map((o) => o.i).sort((a, b) => a - b);
+const nivelMes = suma.map((v) => (v === null || !max ? '' : v / max >= 0.8 ? niveles.alta : v / max <= 0.55 ? niveles.baja : niveles.media));
+const hayTemporada = conDato.length >= 6;
+const MESES = mesesLargos(lang);
+const nombresMedidos = medidos.map((l) => l.nombre);
+const basadoEn = nombresMedidos.length <= 3 ? nombresMedidos.join(', ') : `${nombresMedidos.slice(0, 3).join(', ')} +${numero(nombresMedidos.length - 3, lang)}`;
+
+const destacados = lugares.slice(0, 5);
+const preguntas = [
+  ['cuando', g.p.cuando],
+  ['ver', g.p.ver],
+  ['avisos', g.p.avisos],
+  ['emergencia', g.p.emergencia],
+  ...(otras.length ? [['cerca', g.p.cerca]] : []),
+] as const;
+const tx = {
+  cargando: g.r.avisosCargando,
+  no: g.r.avisosNo(provincia),
+  si1: g.r.avisosSi(provincia, 1),
+  siN: g.r.avisosSi(provincia, 99).replace('99', '{n}'),
+  error: g.r.avisosError,
+  niveles: textos(lang).avisos.niveles,
+};
+---
+<section class="guia envoltura" id="preguntas" aria-labelledby="guia-titulo" data-guia data-provincia={provincia} data-tx={JSON.stringify(tx)} data-niveles={JSON.stringify(nivelMes)} data-meses={JSON.stringify(MESES)}>
+  <h2 id="guia-titulo">{g.titulo(provincia)}</h2>
+  <p class="explica">{g.explica}</p>
+
+  <div class="charla" data-charla aria-live="polite"></div>
+
+  <div class="opciones" data-opciones>
+    {preguntas.map(([id, texto]) => (
+      <button type="button" data-p={id}>{texto}</button>
+    ))}
+  </div>
+  <button type="button" class="reiniciar" data-reiniciar hidden>{g.reiniciar}</button>
+
+  <div class="moldes" hidden>
+  <div data-r="cuando">
+    {hayTemporada ? (
+      <>
+        <p>{g.r.cuandoPico(provincia, listaMeses(picos, lang))} {g.r.cuandoCalmo(listaMeses(calmos, lang))}</p>
+        <p data-este-mes hidden>{g.r.esteMes} (<span data-mes></span>): <strong data-nivel></strong>.</p>
+        <p class="chica">{g.r.basado(basadoEn)}</p>
+      </>
+    ) : (
+      <p>{g.r.sinDatos(provincia)}</p>
+    )}
+  </div>
+
+  <div data-r="ver">
+    <p>{g.r.ver(provincia)}</p>
+    <ul>
+      {destacados.map((l) => (
+        <li>
+          <a href={l.fichaUrl ?? `#lugar-${l.n}`}>{l.nombre}</a>{l.lema && <span class="chica"> · {l.lema}</span>}
+        </li>
+      ))}
+    </ul>
+    {lugares.length > destacados.length && <p class="chica">{g.r.verMas}</p>}
+  </div>
+
+  <div data-r="avisos">
+    <p data-avisos-texto>{g.r.avisosCargando}</p>
+    <ul data-avisos-lista hidden></ul>
+  </div>
+
+  <div data-r="emergencia">
+    <p>{g.r.emergencia(provincia)}</p>
+    <ul class="tels">
+      {ayuda.numeros.slice(0, 6).map((n) => (
+        <li><a href={`tel:${n.numero}`}><strong>{n.numero}</strong></a><span>{tr(n.que, lang)}</span></li>
+      ))}
+    </ul>
+    <p class="chica">{textos(lang).ayuda.consejo}</p>
+  </div>
+
+  <div data-r="cerca">
+    <p>{g.r.cerca(region)}</p>
+    <ul class="enlinea">
+      {otras.map((o) => <li><a href={url(lang, `provincia/${o.slug}/`)}>{o.nombre}</a></li>)}
+    </ul>
+  </div>
+
+  <p class="burbuja yo" data-burbuja-yo><span class="quien">{g.yo}</span><span data-t></span></p>
+  <div class="burbuja sitio" data-burbuja-sitio><span class="quien">{g.sitio}</span><div data-t></div></div>
+  </div>
+</section>
+
+<script>
+  type Aviso = { nivel: string; titulo: string; tipo: string; provincias: string[]; fuente: string; link: string; hasta?: string };
+  type Datos = { avisos: Aviso[] };
+  const w = window as unknown as { __avisos?: Datos; __avisosError?: boolean };
+
+  document.querySelectorAll<HTMLElement>('[data-guia]').forEach((guia) => {
+    const tx = JSON.parse(guia.dataset.tx || '{}');
+    const niveles: string[] = JSON.parse(guia.dataset.niveles || '[]');
+    const meses: string[] = JSON.parse(guia.dataset.meses || '[]');
+    const prov = guia.dataset.provincia || '';
+    const charla = guia.querySelector<HTMLElement>('[data-charla]')!;
+    const reiniciar = guia.querySelector<HTMLButtonElement>('[data-reiniciar]')!;
+    const tplYo = guia.querySelector<HTMLElement>('[data-burbuja-yo]')!;
+    const tplSitio = guia.querySelector<HTMLElement>('[data-burbuja-sitio]')!;
+
+    const completarAvisos = (caja: HTMLElement) => {
+      const texto = caja.querySelector<HTMLElement>('[data-avisos-texto]');
+      const lista = caja.querySelector<HTMLUListElement>('[data-avisos-lista]');
+      if (!texto || !lista) return;
+      if (w.__avisosError) { texto.textContent = tx.error; return; }
+      if (!w.__avisos) return;
+      // Vigentes, sin eventos menores, y una sola línea por tipo y nivel (el SMN parte cada alerta por zonas).
+      const vistos = new Set<string>();
+      const avisos = w.__avisos.avisos.filter((a) => {
+        const informativo = a.fuente === 'GDACS' && ['FL', 'WF', 'VO', 'DR'].includes(a.tipo);
+        if (!a.provincias.includes(prov) || (a.nivel === 'verde' && !informativo) || (a.hasta && Date.parse(a.hasta) < Date.now())) return false;
+        const k = `${a.fuente}|${a.tipo}|${a.nivel}${a.fuente === 'INA' || a.fuente === 'OAVV' ? `|${a.titulo}` : ''}`;
+        if (vistos.has(k)) return false;
+        vistos.add(k);
+        return true;
+      });
+      if (!avisos.length) { texto.textContent = tx.no; return; }
+      texto.textContent = avisos.length === 1 ? tx.si1 : tx.siN.replace('{n}', String(avisos.length));
+      lista.replaceChildren(
+        ...avisos.slice(0, 6).map((a) => {
+          const li = document.createElement('li');
+          const enlace = document.createElement('a');
+          enlace.href = a.link;
+          enlace.target = '_blank';
+          enlace.rel = 'noopener';
+          enlace.textContent = a.titulo || a.tipo;
+          li.append(`${tx.niveles[a.nivel] ?? a.nivel}: `, enlace, ` (${a.fuente})`);
+          return li;
+        }),
+      );
+      lista.hidden = false;
+    };
+    const pendientes = new Set<HTMLElement>();
+    const alLlegar = () => { pendientes.forEach(completarAvisos); pendientes.clear(); };
+    window.addEventListener('avisos:listos', alLlegar);
+    window.addEventListener('avisos:error', alLlegar);
+
+    guia.querySelectorAll<HTMLButtonElement>('[data-p]').forEach((boton) => {
+      boton.addEventListener('click', () => {
+        const id = boton.dataset.p!;
+        const yo = tplYo.cloneNode(true) as HTMLElement;
+        yo.removeAttribute('data-burbuja-yo');
+        yo.querySelector('[data-t]')!.textContent = boton.textContent!.trim();
+        const sitio = tplSitio.cloneNode(true) as HTMLElement;
+        sitio.removeAttribute('data-burbuja-sitio');
+        const cuerpo = sitio.querySelector<HTMLElement>('[data-t]')!;
+        cuerpo.append(...[...guia.querySelector<HTMLElement>(`[data-r="${id}"]`)!.children].map((n) => n.cloneNode(true)));
+        const m = new Date().getMonth();
+        const esteMes = cuerpo.querySelector<HTMLElement>('[data-este-mes]');
+        if (esteMes && niveles[m]) {
+          esteMes.querySelector('[data-mes]')!.textContent = meses[m];
+          esteMes.querySelector('[data-nivel]')!.textContent = niveles[m];
+          esteMes.hidden = false;
+        }
+        const ultimo = sitio;
+        charla.append(yo, sitio);
+        if (id === 'avisos') { pendientes.add(ultimo); completarAvisos(ultimo); }
+        boton.hidden = true;
+        reiniciar.hidden = false;
+        ultimo.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      });
+    });
+    reiniciar.addEventListener('click', () => {
+      charla.replaceChildren();
+      guia.querySelectorAll<HTMLButtonElement>('[data-p]').forEach((b) => (b.hidden = false));
+      reiniciar.hidden = true;
+    });
+  });
+</script>
+
+<style>
+  .guia {
+    margin-top: 3.5rem;
+    padding-block: 1.4rem 1.6rem;
+    border-top: 2px solid var(--tinta);
+  }
+  .guia h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0 0 0.3rem; }
+  .explica { margin: 0 0 1rem; color: var(--tinta-2); font-size: 0.95rem; }
+  .charla { display: grid; gap: 0.6rem; max-width: 40rem; }
+  .charla:not(:empty) { margin-bottom: 1rem; }
+  .charla :global(.burbuja) { margin: 0; padding: 0.6rem 0.8rem; border-radius: 10px; max-width: 100%; }
+  .charla :global(.quien) {
+    display: block;
+    font-family: var(--f-dato);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--tinta-2);
+    margin-bottom: 0.2rem;
+  }
+  .charla :global(.yo) {
+    justify-self: end;
+    background: color-mix(in oklab, var(--celeste) 28%, var(--papel));
+    border-bottom-right-radius: 2px;
+  }
+  .charla :global(.sitio) {
+    justify-self: start;
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-bottom-left-radius: 2px;
+  }
+  .charla :global(.sitio p) { margin: 0 0 0.4rem; }
+  .charla :global(.sitio p:last-child) { margin-bottom: 0; }
+  .charla :global(.sitio ul) { margin: 0.2rem 0 0.4rem; padding-left: 1.1rem; }
+  .charla :global(.sitio li) { margin-block: 0.2rem; }
+  .charla :global(.chica) { font-size: 0.85rem; color: var(--tinta-2); }
+  .charla :global(.tels) { list-style: none; padding: 0 !important; }
+  .charla :global(.tels li) { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
+  .charla :global(.tels a) { font-family: var(--f-titulo); font-size: 1.25rem; }
+  .charla :global(.enlinea) { list-style: none; padding: 0 !important; display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  .opciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .opciones button, .reiniciar {
+    font: inherit;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.9rem;
+    min-height: 44px;
+    border: 1px solid var(--celeste);
+    border-radius: 999px;
+    background: var(--papel);
+    color: var(--celeste-texto);
+    cursor: pointer;
+    text-align: left;
+  }
+  .opciones button:hover { background: color-mix(in oklab, var(--celeste) 15%, var(--papel)); }
+  .reiniciar { margin-top: 0.6rem; border-color: var(--linea); color: var(--tinta-2); }
+</style>

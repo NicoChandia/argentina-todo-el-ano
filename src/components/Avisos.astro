@@ -1,0 +1,197 @@
+---
+// Avisos oficiales actuales (SMN, INA, OAVV y GDACS). Se cargan en el navegador desde /api/avisos.json,
+// así la página sigue siendo estática y los avisos están siempre al día.
+// Con `provincia` muestra solo los de esa provincia; sin ella, un resumen de todo el país.
+import { t as textos, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  provincia?: string;
+}
+const { lang, provincia } = Astro.props;
+const x = textos(lang).avisos;
+const locale = lang === 'es' ? 'es-AR' : lang === 'pt' ? 'pt-BR' : 'en-US';
+const tx = {
+  titulo: provincia ? x.tituloProvincia(provincia) : x.tituloPais,
+  sinAvisos: provincia ? x.sinAvisosProvincia(provincia) : x.sinAvisosPais,
+  error: x.error,
+  actualizado: x.actualizado('{hora}'),
+  hasta: x.hasta('{fecha}'),
+  fuente: x.fuente,
+  ver: x.ver,
+  niveles: x.niveles,
+  tipos: x.tipos,
+  nota: x.nota,
+  enProvincias: x.enProvincias,
+};
+---
+<section
+  class="avisos"
+  data-avisos
+  data-provincia={provincia ?? ''}
+  data-locale={locale}
+  data-tx={JSON.stringify(tx)}
+  aria-live="polite"
+  aria-labelledby={`avisos-${provincia ?? 'pais'}`}
+>
+  <p class="cabeza">
+    <span class="icono" aria-hidden="true">!</span>
+    <span id={`avisos-${provincia ?? 'pais'}`} class="titulo">{tx.titulo}</span>
+    <span class="estado" data-estado>{x.cargando}</span>
+  </p>
+  <ul class="lista" data-lista hidden></ul>
+  <p class="nota" data-nota hidden>{x.nota}</p>
+</section>
+
+<script>
+  type Aviso = {
+    fuente: string;
+    tipo: string;
+    nivel: 'verde' | 'amarillo' | 'naranja' | 'rojo';
+    titulo: string;
+    zonas: string;
+    provincias: string[];
+    desde?: string;
+    hasta?: string;
+    link: string;
+  };
+  type Respuesta = { actualizado: string; fuentes: Record<string, { ok: boolean }>; avisos: Aviso[] };
+
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const orden = { rojo: 0, naranja: 1, amarillo: 2, verde: 3 };
+  let pedido: Promise<Respuesta> | null = null;
+  const cargar = () =>
+    (pedido ??= fetch('/api/avisos.json', { headers: { Accept: 'application/json' } }).then((r) => {
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json();
+    }));
+
+  document.querySelectorAll<HTMLElement>('[data-avisos]').forEach(async (caja) => {
+    const tx = JSON.parse(caja.dataset.tx || '{}');
+    const prov = caja.dataset.provincia || '';
+    const locale = caja.dataset.locale || 'es-AR';
+    const estado = caja.querySelector<HTMLElement>('[data-estado]')!;
+    const lista = caja.querySelector<HTMLUListElement>('[data-lista]')!;
+    const nota = caja.querySelector<HTMLElement>('[data-nota]')!;
+    const hora = (iso: string) => new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    const fecha = (iso: string) =>
+      new Date(iso).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    try {
+      const datos = await cargar();
+      // El SMN emite una alerta por zona: la misma tormenta llega partida en muchas.
+      // Se agrupan por tipo y nivel, con todas sus provincias y la vigencia completa.
+      const filtrados = datos.avisos
+        // Verde de GDACS = informativo: solo se muestra si es inundación, incendio forestal, volcán o sequía.
+        .filter((a) => a.nivel !== 'verde' || (a.fuente === 'GDACS' && ['FL', 'WF', 'VO', 'DR'].includes(a.tipo)))
+        .filter((a) => !a.hasta || Date.parse(a.hasta) > Date.now())
+        .filter((a) => (prov ? a.provincias.includes(prov) : a.provincias.length > 0));
+      const grupos = new Map<string, Aviso & { n: number }>();
+      for (const a of filtrados) {
+        const k = `${a.fuente}|${a.tipo}|${a.nivel}`;
+        const g = grupos.get(k);
+        if (!g) {
+          grupos.set(k, { ...a, provincias: [...a.provincias], n: 1 });
+          continue;
+        }
+        g.n++;
+        // Ríos y volcanes: cada estación o volcán es un lugar distinto y se nombran todos.
+        if (a.fuente !== 'SMN' && a.fuente !== 'GDACS') {
+          if (!g.titulo.split(' · ').includes(a.titulo)) g.titulo += ` · ${a.titulo}`;
+          if (a.zonas && !g.zonas.includes(a.zonas)) g.zonas += ` · ${a.zonas}`;
+        }
+        g.provincias = [...new Set([...g.provincias, ...a.provincias])];
+        if (a.desde && (!g.desde || a.desde < g.desde)) g.desde = a.desde;
+        if (a.hasta && (!g.hasta || a.hasta > g.hasta)) g.hasta = a.hasta;
+        if (a.fuente === 'SMN') g.link = 'https://www.smn.gob.ar/alertas';
+      }
+      const todos = [...grupos.values()].sort((a, b) => orden[a.nivel] - orden[b.nivel] || b.provincias.length - a.provincias.length);
+      const algunaCayo = Object.values(datos.fuentes).some((f) => !f.ok);
+      if (!todos.length) {
+        caja.classList.add('vacio');
+        estado.textContent = `${tx.sinAvisos} · ${tx.actualizado.replace('{hora}', hora(datos.actualizado))}`;
+        if (algunaCayo) estado.textContent += ` · ${tx.error}`;
+      } else {
+        caja.classList.add('hay', `nivel-${todos[0].nivel}`);
+        estado.textContent = tx.actualizado.replace('{hora}', hora(datos.actualizado));
+        lista.innerHTML = todos
+          .slice(0, 6)
+          .map(
+            (a) => `<li class="aviso ${a.nivel}">
+              <span class="chip">${esc(tx.niveles[a.nivel] ?? a.nivel)}</span>
+              <div>
+                <p class="t">${esc(tx.tipos[a.tipo] ?? (a.tipo || a.titulo))}</p>
+                ${!prov && (a.fuente === 'INA' || a.fuente === 'OAVV') ? `<p class="z">${esc(a.titulo)}</p>` : ''}
+                ${!prov ? `<p class="z">${esc(tx.enProvincias)}: ${esc([...a.provincias].sort((x, y) => x.localeCompare(y, 'es')).join(', '))}</p>` : ''}
+                ${prov && a.zonas ? `<p class="z">${esc(a.zonas)}</p>` : ''}
+                <p class="m">${esc(tx.fuente)}: ${esc(a.fuente)}${a.hasta ? ` · ${esc(tx.hasta.replace('{fecha}', fecha(a.hasta)))}` : ''} · <a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(tx.ver)}</a></p>
+              </div>
+            </li>`,
+          )
+          .join('');
+        lista.hidden = false;
+        nota.hidden = false;
+      }
+      (window as any).__avisos = datos;
+      window.dispatchEvent(new CustomEvent('avisos:listos', { detail: datos }));
+    } catch {
+      caja.classList.add('vacio');
+      estado.textContent = tx.error;
+      (window as any).__avisosError = true;
+      window.dispatchEvent(new CustomEvent('avisos:error'));
+    }
+  });
+</script>
+
+<style>
+  .avisos {
+    border: 1px solid var(--linea);
+    border-left: 4px solid var(--linea);
+    border-radius: 3px;
+    padding: 0.7rem 0.9rem;
+    margin-block: 1rem;
+    background: var(--papel);
+  }
+  .avisos.hay { border-left-color: var(--arena); }
+  .avisos.nivel-naranja { border-left-color: #d9781a; }
+  .avisos.nivel-rojo { border-left-color: #c0392b; }
+  .cabeza { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.7rem; margin: 0; }
+  .icono {
+    display: inline-grid;
+    place-items: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    background: var(--linea);
+    color: var(--tinta);
+    font-family: var(--f-dato);
+    font-size: 0.72rem;
+    font-weight: 500;
+    align-self: center;
+  }
+  .hay .icono { background: var(--arena); color: #1a1205; }
+  .nivel-naranja .icono { background: #d9781a; color: #fff; }
+  .nivel-rojo .icono { background: #c0392b; color: #fff; }
+  .titulo { font-family: var(--f-titulo); font-weight: 600; font-size: 1.15rem; }
+  .estado { font-family: var(--f-dato); font-size: 0.72rem; color: var(--tinta-2); }
+  .lista { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+  .lista :global(.aviso) { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.6rem; align-items: start; }
+  .lista :global(.chip) {
+    font-family: var(--f-dato);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    white-space: nowrap;
+    background: var(--papel-2);
+  }
+  .lista :global(.amarillo .chip) { background: #f2d24b; color: #2a2205; }
+  .lista :global(.naranja .chip) { background: #d9781a; color: #fff; }
+  .lista :global(.rojo .chip) { background: #c0392b; color: #fff; }
+  .lista :global(.verde .chip) { background: #4f9a5b; color: #fff; }
+  .lista :global(p) { margin: 0; }
+  .lista :global(.t) { font-weight: 600; }
+  .lista :global(.z) { font-size: 0.9rem; color: var(--tinta-2); overflow-wrap: anywhere; }
+  .lista :global(.m) { font-family: var(--f-dato); font-size: 0.72rem; color: var(--tinta-2); margin-top: 0.15rem; }
+  .nota { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--tinta-2); }
+</style>

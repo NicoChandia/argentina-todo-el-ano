@@ -1,0 +1,10 @@
+---
+import Ficha from '../components/Ficha.astro';
+import { destinos } from '../data/destinos';
+
+export function getStaticPaths() {
+  return destinos.map((d, i) => ({ params: { id: d.id }, props: { i } }));
+}
+const { i } = Astro.props as { i: number };
+---
+<Ficha lang="es" i={i} />

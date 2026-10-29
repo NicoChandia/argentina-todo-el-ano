@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://argentina-todo-el-ano.vercel.app/sitemap.xml

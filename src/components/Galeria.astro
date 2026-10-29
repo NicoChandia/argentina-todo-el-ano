@@ -1,0 +1,207 @@
+---
+// Galería de fotos de una ficha.
+// - En pantallas anchas: un mosaico con la primera foto más grande.
+// - En celular: un carrusel que se desliza con el dedo, con contador.
+// - Al tocar una foto se abre en grande (con flechas, teclado y deslizar), con su crédito.
+import type { Foto } from '../lib/fotos';
+import Credito from './Credito.astro';
+import { t as textos, type Lang } from '../i18n';
+
+interface Props {
+  fotos: Foto[];
+  alt: string;
+  lang: Lang;
+}
+const { fotos, alt, lang } = Astro.props;
+const x = textos(lang).galeria;
+// Qué parte del ancho ocupa cada foto en el mosaico, para que el navegador baje el tamaño
+// justo (una foto ancha con el archivo chico se ve borrosa).
+const n = Math.min(fotos.length, 8);
+const columnas = n === 1 ? 1 : n === 2 ? 2 : n === 3 || n === 6 ? 3 : 4;
+const ancha = (i: number) =>
+  (i === 0 && n >= 4) || (n === 4 && i === 3) || (n === 7 && i >= 5) || (n === 8 && i === 7);
+const ancho = (i: number) => Math.round(((ancha(i) ? 2 : 1) / columnas) * 100);
+---
+{fotos.length > 0 && (
+  <section class="galeria" aria-label={x.titulo} data-galeria data-fotos={JSON.stringify(fotos.map((f) => ({ src: f.src, srcset: f.srcset })))}>
+    <div class="envoltura cabeza">
+      <h2>{x.titulo}</h2>
+      <p class="contador" aria-hidden="true"><span data-actual>1</span> / {fotos.length}</p>
+    </div>
+    <ul class={`mosaico n${Math.min(fotos.length, 8)}`} data-pista>
+      {fotos.map((f, i) => (
+        <li>
+          <button type="button" data-abrir={i} aria-label={x.ampliar(i + 1, fotos.length)}>
+            <img
+              src={f.src}
+              srcset={f.srcset}
+              sizes={`(max-width: 48rem) 88vw, ${ancho(i)}vw`}
+              alt={`${alt} (${i + 1})`}
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        </li>
+      ))}
+    </ul>
+    <dialog class="visor" data-visor aria-label={x.titulo}>
+      <div class="visor-barra">
+        <span data-visor-contador></span>
+        <button type="button" data-cerrar aria-label={x.cerrar}>×</button>
+      </div>
+      <figure>
+        <img data-visor-img alt="" />
+        <figcaption data-visor-credito></figcaption>
+      </figure>
+      <button type="button" class="flecha ant" data-ant aria-label={x.anterior}>‹</button>
+      <button type="button" class="flecha sig" data-sig aria-label={x.siguiente}>›</button>
+      <div hidden>
+        {fotos.map((f, i) => (
+          <span data-credito={i}><Credito f={f} lang={lang} clase="sobre" /></span>
+        ))}
+      </div>
+    </dialog>
+  </section>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-galeria]').forEach((g) => {
+    const fotos: { src: string; srcset: string }[] = JSON.parse(g.dataset.fotos || '[]');
+    const pista = g.querySelector<HTMLElement>('[data-pista]')!;
+    const actual = g.querySelector<HTMLElement>('[data-actual]')!;
+    const visor = g.querySelector<HTMLDialogElement>('[data-visor]')!;
+    const img = g.querySelector<HTMLImageElement>('[data-visor-img]')!;
+    const cred = g.querySelector<HTMLElement>('[data-visor-credito]')!;
+    const cont = g.querySelector<HTMLElement>('[data-visor-contador]')!;
+    let i = 0;
+
+    // Contador del carrusel en celular
+    const items = [...pista.children] as HTMLElement[];
+    const obs = new IntersectionObserver(
+      (es) => es.forEach((e) => { if (e.isIntersecting) actual.textContent = String(items.indexOf(e.target as HTMLElement) + 1); }),
+      { root: pista, threshold: 0.6 },
+    );
+    items.forEach((it) => obs.observe(it));
+
+    const mostrar = (n: number) => {
+      i = (n + fotos.length) % fotos.length;
+      img.srcset = fotos[i].srcset;
+      img.sizes = '100vw';
+      img.src = fotos[i].src;
+      img.alt = (items[i].querySelector('img') as HTMLImageElement).alt;
+      const c = g.querySelector<HTMLElement>(`[data-credito="${i}"]`);
+      cred.replaceChildren(...(c ? [...c.childNodes].map((n) => n.cloneNode(true)) : []));
+      cont.textContent = `${i + 1} / ${fotos.length}`;
+    };
+    g.querySelectorAll<HTMLButtonElement>('[data-abrir]').forEach((b) =>
+      b.addEventListener('click', () => { mostrar(Number(b.dataset.abrir)); visor.showModal(); }),
+    );
+    g.querySelector('[data-cerrar]')!.addEventListener('click', () => visor.close());
+    g.querySelector('[data-ant]')!.addEventListener('click', () => mostrar(i - 1));
+    g.querySelector('[data-sig]')!.addEventListener('click', () => mostrar(i + 1));
+    visor.addEventListener('click', (e) => { if (e.target === visor) visor.close(); });
+    visor.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') mostrar(i - 1);
+      if (e.key === 'ArrowRight') mostrar(i + 1);
+    });
+    // Deslizar con el dedo dentro del visor
+    let x0: number | null = null;
+    visor.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    visor.addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40) mostrar(dx < 0 ? i + 1 : i - 1);
+      x0 = null;
+    });
+  });
+</script>
+
+<style>
+  .galeria { margin-top: 4.5rem; }
+  .cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .cabeza h2 { font-size: 2rem; margin: 0 0 0.9rem; }
+  .contador { font-family: var(--f-dato); font-size: 0.8rem; color: var(--tinta-2); margin: 0; display: none; }
+  .mosaico { list-style: none; margin: 0; padding: 0; }
+  .mosaico li { margin: 0; }
+  .mosaico button { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: var(--papel-2); cursor: zoom-in; overflow: hidden; }
+  .mosaico img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+  .mosaico button:hover img, .mosaico button:focus-visible img { transform: scale(1.03); }
+
+  /* Celular: carrusel deslizable */
+  @media (max-width: 48rem) {
+    .contador { display: block; }
+    .mosaico {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-inline: var(--gutter-izq) var(--gutter-der);
+      scroll-padding-inline: var(--gutter-izq);
+      scrollbar-width: none;
+    }
+    .mosaico::-webkit-scrollbar { display: none; }
+    .mosaico li { flex: 0 0 88%; scroll-snap-align: start; aspect-ratio: 4 / 3; border-radius: 4px; overflow: hidden; }
+  }
+
+  /* Pantallas anchas: mosaico, la primera foto más grande */
+  @media (min-width: 48.01rem) {
+    .mosaico {
+      max-width: var(--ancho);
+      margin-inline: auto;
+      padding-inline: var(--gutter-izq) var(--gutter-der);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: 13rem;
+      gap: 6px;
+    }
+    .mosaico li:first-child { grid-column: span 2; grid-row: span 2; }
+    .mosaico.n1 { grid-template-columns: 1fr; grid-auto-rows: 26rem; }
+    .mosaico.n1 li:first-child { grid-column: auto; grid-row: auto; }
+    .mosaico.n2 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 20rem; }
+    .mosaico.n2 li:first-child, .mosaico.n3 li:first-child { grid-column: auto; grid-row: auto; }
+    .mosaico.n3 { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 16rem; }
+    .mosaico.n4 li:first-child { grid-column: span 2; grid-row: span 2; }
+    .mosaico.n4 li:last-child { grid-column: span 2; }
+    /* Seis fotos: la grande ocupa dos tercios y el resto llena una fila de tres (sin tiras finas). */
+    .mosaico.n6 { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 15rem; }
+    .mosaico.n7 li:nth-child(6), .mosaico.n7 li:nth-child(7) { grid-column: span 2; }
+    .mosaico.n8 li:nth-child(8) { grid-column: span 2; }
+    .mosaico li { border-radius: 3px; overflow: hidden; }
+  }
+
+  .visor {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(6 12 16 / 0.96);
+    color: #fff;
+  }
+  .visor::backdrop { background: rgb(6 12 16 / 0.9); }
+  .visor[open] { display: grid; grid-template-rows: auto 1fr; }
+  .visor-barra { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; font-family: var(--f-dato); font-size: 0.85rem; }
+  .visor-barra button { font-size: 2rem; line-height: 1; width: 3rem; height: 3rem; border: 0; background: transparent; color: #fff; cursor: pointer; }
+  .visor figure { margin: 0; display: grid; grid-template-rows: 1fr auto; min-height: 0; padding: 0 0.5rem 1rem; }
+  .visor img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+  .visor figcaption { text-align: center; padding-top: 0.5rem; }
+  .flecha {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 4.5rem;
+    border: 0;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    font-size: 2.4rem;
+    cursor: pointer;
+  }
+  .flecha:hover { background: rgb(255 255 255 / 0.25); }
+  .ant { left: 0.6rem; }
+  .sig { right: 0.6rem; }
+  @media (prefers-reduced-motion: reduce) { .mosaico img { transition: none; } }
+</style>

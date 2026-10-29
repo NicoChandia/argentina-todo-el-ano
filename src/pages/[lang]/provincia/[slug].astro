@@ -1,0 +1,12 @@
+---
+import Provincia from '../../../components/Provincia.astro';
+import info from '../../../data/provincias-info.json';
+import { idiomaPorDefecto, idiomas, type Lang } from '../../../i18n';
+
+export function getStaticPaths() {
+  return idiomas
+    .filter((l) => l !== idiomaPorDefecto)
+    .flatMap((lang) => info.map((p) => ({ params: { lang, slug: p.slug } })));
+}
+---
+<Provincia lang={Astro.params.lang as Lang} slug={Astro.params.slug!} />
